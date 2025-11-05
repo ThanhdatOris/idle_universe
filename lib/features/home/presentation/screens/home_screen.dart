@@ -8,14 +8,13 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
-
-    // 1. Lấy state (để đọc)
     final gameState = ref.watch(gameControllerProvider);
-    // 2. Lấy controller (để gọi hàm)
     final gameController = ref.read(gameControllerProvider.notifier);
 
-    // 3. Xác định xem nút có bị vô hiệu hóa không
-    final bool canAfford = gameState.energy >= gameState.energyUpgradeCost;
+    // Tính toán khả năng mua
+    final bool canAffordEnergyUpgrade = gameState.energy >= gameState.energyUpgradeCost;
+    // 1. Tính toán cho Matter
+    final bool canAffordMatterProducer = gameState.energy >= gameState.matterProducerCost;
 
     return Scaffold(
       appBar: AppBar(
@@ -25,53 +24,87 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Energy',
-              style: textTheme.headlineMedium,
-            ),
+            // --- Hiển thị Energy (Giữ nguyên) ---
+            Text('Energy', style: textTheme.headlineMedium),
             const SizedBox(height: 16),
             Text(
-              gameState.energy.toStringAsFixed(0), // Làm tròn cho đẹp
+              gameState.energy.toStringAsFixed(0),
               style: textTheme.displayLarge,
             ),
-            const SizedBox(height: 10),
             Text(
               '${gameState.energyPerSecond.toStringAsFixed(0)} / giây',
               style: textTheme.bodyMedium,
             ),
-            
+
+            // 2. --- Hiển thị Matter (Mới) ---
+            const SizedBox(height: 30), // Khoảng cách
+            Text('Matter', style: textTheme.headlineMedium),
+            const SizedBox(height: 16),
+            Text(
+              gameState.matter.toStringAsFixed(0),
+              style: textTheme.displayLarge?.copyWith(
+                color: Colors.amberAccent, // Màu khác cho Matter
+              ), 
+            ),
+            Text(
+              '${gameState.matterPerSecond.toStringAsFixed(0)} / giây',
+              style: textTheme.bodyMedium,
+            ),
+
             const SizedBox(height: 40), // Khoảng cách
 
-            // 4. Nút Nâng Cấp
-            ElevatedButton(
-              // 5. Vô hiệu hóa nút nếu không đủ tiền
-              onPressed: canAfford 
-                  ? () {
-                      // 6. Gọi hàm từ controller
-                      gameController.purchaseEnergyUpgrade();
-                    } 
-                  : null, // null = disabled
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  children: [
-                    Text(
-                      'Nâng cấp sản lượng',
-                      style: textTheme.labelLarge,
+            // 3. --- Hàng Nút Bấm (Mới) ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // --- Nút Nâng Cấp Energy ---
+                ElevatedButton(
+                  onPressed: canAffordEnergyUpgrade
+                      ? gameController.purchaseEnergyUpgrade
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      children: [
+                        Text('Nâng cấp Energy', style: textTheme.labelLarge),
+                        Text(
+                          '(+${gameState.energyPerUpgrade.toStringAsFixed(0)} /s)',
+                        ),
+                        Text(
+                          'Cost: ${gameState.energyUpgradeCost.toStringAsFixed(0)} E',
+                          style: TextStyle(
+                            color: canAffordEnergyUpgrade ? Colors.greenAccent : Colors.redAccent,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      '(+${gameState.energyPerUpgrade.toStringAsFixed(0)} / giây)',
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Chi phí: ${gameState.energyUpgradeCost.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        color: canAfford ? Colors.greenAccent : Colors.redAccent,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+
+                // 4. --- Nút Nâng Cấp Matter (Mới) ---
+                ElevatedButton(
+                  onPressed: canAffordMatterProducer
+                      ? gameController.purchaseMatterProducer
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      children: [
+                        Text('Mua Máy Matter', style: textTheme.labelLarge),
+                        Text(
+                          '(+${gameState.matterPerProducer.toStringAsFixed(0)} /s)',
+                        ),
+                        Text(
+                          'Cost: ${gameState.matterProducerCost.toStringAsFixed(0)} E', // Cost bằng Energy
+                          style: TextStyle(
+                            color: canAffordMatterProducer ? Colors.greenAccent : Colors.redAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

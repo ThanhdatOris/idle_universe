@@ -25,10 +25,10 @@ class GameController extends Notifier<GameState> {
   void _produceResources() {
     state = state.copyWith(
       energy: state.energy + state.energyPerSecond,
+      matter: state.matter + state.matterPerSecond,
     );
   }
 
-  // 2. Thêm hàm mới
   void purchaseEnergyUpgrade() {
     // Kiểm tra xem có đủ 'energy' không
     if (state.energy >= state.energyUpgradeCost) {
@@ -46,6 +46,22 @@ class GameController extends Notifier<GameState> {
       );
     }
     // Nếu không đủ tiền, không làm gì cả
+  }
+
+  void purchaseMatterProducer() {
+    // Kiểm tra xem có đủ 'ENERGY' không
+    if (state.energy >= state.matterProducerCost) {
+      final cost = state.matterProducerCost;
+      
+      // Tăng chi phí (dùng hệ số khác, ví dụ 1.20)
+      final newCost = (cost * Decimal.parse('1.20')).ceil();
+
+      state = state.copyWith(
+        energy: state.energy - cost, // Trừ Energy
+        matterPerSecond: state.matterPerSecond + state.matterPerProducer, // Tăng Matter/s
+        matterProducerCost: newCost, // Đặt chi phí mới
+      );
+    }
   }
 }
 
