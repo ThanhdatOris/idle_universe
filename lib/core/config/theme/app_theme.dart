@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_colors.dart';
 
 class AppTheme {
   // Dark theme: Cosmic tech với màu đen, tím, lam (phù hợp chủ đề vũ trụ tối)
@@ -7,8 +8,8 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.dark,
       primarySwatch: Colors.deepPurple,
-      scaffoldBackgroundColor: const Color(0xFF121212), // Nền đen sâu
-      cardColor: const Color(0xFF1E1E1E), // Card tối
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      cardColor: AppColors.darkSurface,
       textTheme: TextTheme(
         bodyLarge: GoogleFonts.inter(  // Thay bodyText1
           fontSize: 16,
@@ -46,8 +47,8 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.light,
       primarySwatch: Colors.blue, // Accent xanh lam thay vì tím để sáng hơn
-      scaffoldBackgroundColor: const Color(0xFFF5F5F5), // Nền xám nhạt (cosmic light)
-      cardColor: Colors.white,
+      scaffoldBackgroundColor: AppColors.lightBackground,
+      cardColor: AppColors.lightSurface,
       textTheme: TextTheme(
         bodyLarge: GoogleFonts.inter(  // Thay bodyText1
           fontSize: 16,
