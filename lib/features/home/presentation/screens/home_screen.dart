@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:idle_universe/features/home/presentation/logic/game_controller.dart';
+import 'package:idle_universe/core/widgets/widgets.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -108,6 +109,12 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: NavBar(
+        currentIndex: 0,
+        onTap: (index) {
+          // Handle navigation
+        },
       ),
     );
   }
