@@ -4,11 +4,12 @@ import 'package:decimal/decimal.dart';
 /// Hỗ trợ: 1K, 1M, 1B, 1T, scientific notation (1e6)
 class NumberFormatter {
   /// Helper: Convert Rational to Decimal (vì Decimal * Decimal trả về Rational)
-  static Decimal _toDecimal(dynamic value) {
+  static Decimal toDecimal(dynamic value) {
     if (value is Decimal) return value;
     // Rational → double → Decimal (precision có thể bị mất nhưng đủ dùng)
     return Decimal.parse(value.toDouble().toString());
   }
+
   /// Format Decimal thành string dễ đọc (1.23K, 4.56M, 7.89B...)
   /// 
   /// Ví dụ:
@@ -40,7 +41,7 @@ class NumberFormatter {
 
     // Chia cho 1000 đến khi < 1000 hoặc hết suffix
     while (tempValue >= thousand && suffixIndex < suffixes.length - 1) {
-      tempValue = _toDecimal(tempValue / thousand);
+      tempValue = toDecimal(tempValue / thousand);
       suffixIndex++;
     }
 
@@ -67,12 +68,12 @@ class NumberFormatter {
     // Normalize: đưa mantissa về [1, 10)
     if (mantissa >= ten) {
       while (mantissa >= ten) {
-        mantissa = _toDecimal(mantissa / ten);
+        mantissa = toDecimal(mantissa / ten);
         exponent++;
       }
     } else if (mantissa < Decimal.one) {
       while (mantissa < Decimal.one) {
-        mantissa = _toDecimal(mantissa * ten);
+        mantissa = toDecimal(mantissa * ten);
         exponent--;
       }
     }
@@ -127,15 +128,15 @@ class NumberFormatter {
         Decimal multiplier = Decimal.one;
         if (exponent > 0) {
           for (int i = 0; i < exponent; i++) {
-            multiplier = _toDecimal(multiplier * ten);
+            multiplier = toDecimal(multiplier * ten);
           }
         } else if (exponent < 0) {
           for (int i = 0; i > exponent; i--) {
-            multiplier = _toDecimal(multiplier / ten);
+            multiplier = toDecimal(multiplier / ten);
           }
         }
-        
-        return _toDecimal(mantissa * multiplier);
+
+        return toDecimal(mantissa * multiplier);
       } catch (e) {
         return null;
       }
