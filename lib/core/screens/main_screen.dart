@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:idle_universe/core/widgets/navbar.dart';
+import 'package:idle_universe/core/widgets/widgets.dart';
 import 'package:idle_universe/features/home/presentation/screens/home_screen.dart';
-import 'package:idle_universe/features/settings/presentation/screens/setting_screen.dart';
+import 'package:idle_universe/features/prestige/presentation/screens/prestige_screen.dart';
+import 'package:idle_universe/features/settings/presentation/screens/settings_screen.dart';
+import 'package:idle_universe/features/stats/presentation/screens/stats_screen.dart';
 
 /// MainScreen - Screen chính với bottom navigation
 /// 
@@ -23,9 +25,9 @@ class _MainScreenState extends State<MainScreen> {
   // Danh sách các screens
   final List<Widget> _screens = [
     const HomeScreen(),
-    const PrestigeScreen(), // TODO: Tạo PrestigeScreen
-    const SettingScreen(),
-    const StatsScreen(), // TODO: Tạo StatsScreen
+    const PrestigeScreen(),
+    const SettingsScreen(),
+    const StatsScreen(),
   ];
 
   void _onTabTapped(int index) {
@@ -44,42 +46,6 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: NavBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
-      ),
-    );
-  }
-}
-
-// === Placeholder Screens ===
-
-/// Prestige screen (placeholder)
-class PrestigeScreen extends StatelessWidget {
-  const PrestigeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Prestige'),
-      ),
-      body: const Center(
-        child: Text('Prestige Screen\n(Coming Soon)'),
-      ),
-    );
-  }
-}
-
-/// Stats screen (placeholder)
-class StatsScreen extends StatelessWidget {
-  const StatsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Statistics'),
-      ),
-      body: const Center(
-        child: Text('Stats Screen\n(Coming Soon)'),
       ),
     );
   }
