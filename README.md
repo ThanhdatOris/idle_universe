@@ -1,12 +1,12 @@
 ## **Studio:** OrisDev Studio**Studio:** OrisDev Studio
 
-**Cập nhật ngày:** 11/10/2025
+**Cập nhật ngày:** 21/11/2025
 
 ---
 
 # I. TỔNG QUAN DỰ ÁN1. TỔNG QUAN DỰ ÁN
 
-**Idle Universe Builder** là một**Idle Universe Builder** là một game thuộc thể loại **Idle/Incremental**, nơi người chơi bắt đầu từ các **hạt cơ bản** và tiến hóa chúng thành những **cấu trúc vĩ đại hơn của vũ trụ** như **nguyên tử**, **hành tinh**, và **thiên hà**.
+**Idle Universe Builder** là một game thuộc thể loại **Idle/Incremental**, nơi người chơi bắt đầu từ các **hạt cơ bản** và tiến hóa chúng thành những **cấu trúc vĩ đại hơn của vũ trụ** như **nguyên tử**, **hành tinh**, và **thiên hà**.
 
 Mục tiêu của game là **quản lý năng lượng**, **tối ưu chuỗi sản xuất** và **phát triển qua cơ chế tái sinh (Prestige)**.
 
