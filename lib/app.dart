@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
       title: 'Idle Universe Builder',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme(),
-      home: const MainScreen(), // Đổi từ HomeScreen sang MainScreen
+      home: const MainScreen(),
     );
   }
 }
