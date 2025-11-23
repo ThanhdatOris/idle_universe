@@ -11,7 +11,7 @@ class NumberFormatter {
   }
 
   /// Format Decimal thành string dễ đọc (1.23K, 4.56M, 7.89B...)
-  /// 
+  ///
   /// Ví dụ:
   /// - 999 → "999"
   /// - 1234 → "1.23K"
@@ -32,7 +32,8 @@ class NumberFormatter {
     // Danh sách suffixes đến Dc (Decillion = 10^33)
     const suffixes = [
       '', 'K', 'M', 'B', 'T', // 10^0, 10^3, 10^6, 10^9, 10^12
-      'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc', // 10^15, 10^18, 10^21, 10^24, 10^27, 10^30, 10^33
+      'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No',
+      'Dc', // 10^15, 10^18, 10^21, 10^24, 10^27, 10^30, 10^33
     ];
 
     int suffixIndex = 0;
@@ -84,8 +85,15 @@ class NumberFormatter {
   }
 
   /// Format với suffix cụ thể (ví dụ: "1.23 Energy/s")
-  static String formatWithSuffix(Decimal value, String suffix, {int decimals = 2}) {
+  static String formatWithSuffix(Decimal value, String suffix,
+      {int decimals = 2}) {
     return '${format(value, decimals: decimals)} $suffix';
+  }
+
+  /// Format compact - phiên bản rút gọn hơn với ít chữ số thập phân hơn
+  /// Dùng cho UI nhỏ (resource bar, tooltips)
+  static String formatCompact(Decimal value) {
+    return format(value, decimals: 1);
   }
 
   /// Format thời gian (giây → h:m:s)
@@ -117,13 +125,13 @@ class NumberFormatter {
     // Kiểm tra scientific notation (1.5e6, 2.3E12)
     final scientificRegex = RegExp(r'^(-?\d+\.?\d*)[eE]([+-]?\d+)$');
     final scientificMatch = scientificRegex.firstMatch(trimmed);
-    
+
     if (scientificMatch != null) {
       try {
         final mantissa = Decimal.parse(scientificMatch.group(1)!);
         final exponent = int.parse(scientificMatch.group(2)!);
         final ten = Decimal.fromInt(10);
-        
+
         // Tính 10^exponent
         Decimal multiplier = Decimal.one;
         if (exponent > 0) {
@@ -144,15 +152,15 @@ class NumberFormatter {
 
     // Map suffixes sang multipliers (dùng Decimal để tránh overflow)
     final suffixMap = <String, Decimal>{
-      'K': Decimal.fromInt(1000),                           // 10^3
-      'M': Decimal.fromInt(1000000),                        // 10^6
-      'B': Decimal.fromInt(1000000000),                     // 10^9
-      'T': Decimal.parse('1000000000000'),                  // 10^12
-      'QA': Decimal.parse('1000000000000000'),              // 10^15
-      'QI': Decimal.parse('1000000000000000000'),           // 10^18
-      'SX': Decimal.parse('1000000000000000000000'),        // 10^21
-      'SP': Decimal.parse('1000000000000000000000000'),     // 10^24
-      'OC': Decimal.parse('1000000000000000000000000000'),  // 10^27
+      'K': Decimal.fromInt(1000), // 10^3
+      'M': Decimal.fromInt(1000000), // 10^6
+      'B': Decimal.fromInt(1000000000), // 10^9
+      'T': Decimal.parse('1000000000000'), // 10^12
+      'QA': Decimal.parse('1000000000000000'), // 10^15
+      'QI': Decimal.parse('1000000000000000000'), // 10^18
+      'SX': Decimal.parse('1000000000000000000000'), // 10^21
+      'SP': Decimal.parse('1000000000000000000000000'), // 10^24
+      'OC': Decimal.parse('1000000000000000000000000000'), // 10^27
       'NO': Decimal.parse('1000000000000000000000000000000'), // 10^30
       'DC': Decimal.parse('1000000000000000000000000000000000'), // 10^33
     };
@@ -164,7 +172,7 @@ class NumberFormatter {
     if (match != null) {
       final suffix = match.group(1)!.toUpperCase();
       final numberPart = trimmed.substring(0, match.start).trim();
-      
+
       try {
         final number = Decimal.parse(numberPart);
         final multiplier = suffixMap[suffix];
@@ -189,7 +197,9 @@ class NumberFormatter {
     return {
       'text': format(cost),
       'canAfford': currentAmount >= cost,
-      'percentage': cost > Decimal.zero ? (currentAmount / cost).toDouble() : 1.0, // 0.0 - 1.0+
+      'percentage': cost > Decimal.zero
+          ? (currentAmount / cost).toDouble()
+          : 1.0, // 0.0 - 1.0+
     };
   }
 }
