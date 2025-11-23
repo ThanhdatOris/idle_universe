@@ -169,15 +169,27 @@ class ComprehensiveGameController extends Notifier<GameState> {
 
   // ========== GENERATOR ACTIONS ==========
 
-  /// Purchase generator
-  void purchaseGenerator(String generatorId, {int amount = 1}) {
-    final success = state.purchaseGenerator(generatorId, amount: amount);
+  /// Purchase generator (buys as many as possible up to amount)
+  /// Returns actual number purchased
+  int purchaseGenerator(String generatorId, {int amount = 1}) {
+    int purchased = 0;
 
-    if (success) {
-      state = state.copyWith();
-      _stats?.incrementGeneratorsPurchased(count: amount);
-      LoggerService.info('Purchased $amount x $generatorId');
+    for (int i = 0; i < amount; i++) {
+      final success = state.purchaseGenerator(generatorId, amount: 1);
+      if (success) {
+        purchased++;
+      } else {
+        break; // Can't afford more
+      }
     }
+
+    if (purchased > 0) {
+      state = state.copyWith();
+      _stats?.incrementGeneratorsPurchased(count: purchased);
+      LoggerService.info('Purchased $purchased x $generatorId');
+    }
+
+    return purchased;
   }
 
   /// Get generator by ID

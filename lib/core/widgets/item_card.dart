@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:decimal/decimal.dart';
+import 'package:flutter/material.dart';
 import 'package:idle_universe/core/utils/utils.dart';
 
 /// ItemCard - Card component cho Generator/Upgrade
@@ -21,6 +21,7 @@ class ItemCard extends StatelessWidget {
   final String? effectText;
   final VoidCallback? onPurchase;
   final VoidCallback? onLongPress;
+  final VoidCallback? onHoldRelease;
   final Color? accentColor;
   final bool isLocked;
   final String? lockReason;
@@ -38,6 +39,7 @@ class ItemCard extends StatelessWidget {
     this.effectText,
     this.onPurchase,
     this.onLongPress,
+    this.onHoldRelease,
     this.accentColor,
     this.isLocked = false,
     this.lockReason,
@@ -201,20 +203,27 @@ class ItemCard extends StatelessWidget {
 
                   // Purchase button
                   if (!isLocked)
-                    ElevatedButton(
-                      onPressed: canAfford ? onPurchase : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: color,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                    GestureDetector(
+                      onTapDown: canAfford && onLongPress != null
+                          ? (_) => onLongPress?.call()
+                          : null,
+                      onTapUp: (_) => onHoldRelease?.call(),
+                      onTapCancel: () => onHoldRelease?.call(),
+                      child: ElevatedButton(
+                        onPressed: canAfford ? onPurchase : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: color,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        child: const Text('Buy'),
                       ),
-                      child: const Text('Buy'),
                     )
                   else
                     Tooltip(
