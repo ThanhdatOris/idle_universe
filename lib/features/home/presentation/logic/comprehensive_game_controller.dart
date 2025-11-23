@@ -154,7 +154,10 @@ class ComprehensiveGameController extends Notifier<GameState> {
   void _updateGameState() {
     final earned = state.updateEnergy();
 
+    // IMPORTANT: Must reassign state to trigger Riverpod update
     if (earned > Decimal.zero) {
+      state = state.copyWith();
+
       // Update stats
       _stats?.updateMaxEnergy(state.energy);
       _stats?.updateMaxEnergyPerSecond(state.getEnergyPerSecond());
