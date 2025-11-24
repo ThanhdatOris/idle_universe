@@ -21,6 +21,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
   GameStats? _stats;
   PrestigeData? _prestigeData;
   AchievementService? _achievementService;
+  UpgradeService? _upgradeService;
 
   @override
   GameState build() {
@@ -54,6 +55,9 @@ class ComprehensiveGameController extends Notifier<GameState> {
         },
       );
 
+      // Initialize upgrade service
+      _upgradeService = UpgradeService();
+
       // Load saved data
       final saveData = await _saveManager!.loadCompleteGameData();
 
@@ -61,6 +65,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
       final savedStats = saveData['stats'] as GameStats?;
       final savedPrestige = saveData['prestigeData'] as PrestigeData?;
       final savedAchievements = saveData['achievements'] as List<Achievement>?;
+      final savedUpgrades = saveData['upgrades'] as List<Upgrade>?;
 
       if (savedState != null) {
         // Apply offline progress
@@ -80,6 +85,11 @@ class ComprehensiveGameController extends Notifier<GameState> {
         // Load achievements
         if (savedAchievements != null) {
           _achievementService?.loadAchievements(savedAchievements);
+        }
+
+        // Load upgrades
+        if (savedUpgrades != null) {
+          _upgradeService?.loadUpgrades(savedUpgrades);
         }
 
         // Show offline reward if any
@@ -110,6 +120,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
       _stats = GameStats();
       _prestigeData = PrestigeData();
       _achievementService = AchievementService();
+      _upgradeService = UpgradeService();
       _startGameLoop();
     }
   }
@@ -195,6 +206,20 @@ class ComprehensiveGameController extends Notifier<GameState> {
     return state.getGenerator(id);
   }
 
+  // ========== UPGRADE ACTIONS ==========
+
+  /// Purchase upgrade
+  bool purchaseUpgrade(String upgradeId) {
+    if (_upgradeService == null) return false;
+
+    final success = _upgradeService!.purchaseUpgrade(upgradeId, state);
+    if (success) {
+      state = state.copyWith();
+      _stats?.incrementUpgradesPurchased();
+    }
+    return success;
+  }
+
   // ========== MANUAL ACTIONS ==========
 
   /// Manual click to add energy
@@ -252,6 +277,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
       stats: _stats,
       prestigeData: _prestigeData,
       achievements: _achievementService?.achievements,
+      upgrades: _upgradeService?.upgrades,
     );
   }
 
@@ -264,6 +290,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
     _stats = GameStats();
     _prestigeData = PrestigeData();
     _achievementService?.resetAll();
+    _upgradeService?.resetAll();
 
     LoggerService.info('Game reset completed');
   }
@@ -273,6 +300,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
   GameStats? get stats => _stats;
   PrestigeData? get prestigeData => _prestigeData;
   AchievementService? get achievementService => _achievementService;
+  UpgradeService? get upgradeService => _upgradeService;
   Decimal get energy => state.energy;
   Decimal get energyPerSecond => state.getEnergyPerSecond();
   List<Generator> get generators => state.generators;
