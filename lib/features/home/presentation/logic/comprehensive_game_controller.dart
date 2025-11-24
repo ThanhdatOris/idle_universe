@@ -14,11 +14,13 @@ import 'package:idle_universe/core/services/services.dart';
 /// - PrestigeData
 /// - Auto-save
 /// - Offline progress
+/// - Achievements
 class ComprehensiveGameController extends Notifier<GameState> {
   Timer? _gameLoop;
   SaveManager? _saveManager;
   GameStats? _stats;
   PrestigeData? _prestigeData;
+  AchievementService? _achievementService;
 
   @override
   GameState build() {
@@ -44,12 +46,21 @@ class ComprehensiveGameController extends Notifier<GameState> {
         },
       );
 
+      // Initialize achievement service
+      _achievementService = AchievementService(
+        onAchievementUnlocked: (achievement) {
+          // TODO: Show notification/dialog
+          LoggerService.success('🏆 ${achievement.name} unlocked!');
+        },
+      );
+
       // Load saved data
       final saveData = await _saveManager!.loadCompleteGameData();
 
       final savedState = saveData['gameState'] as GameState?;
       final savedStats = saveData['stats'] as GameStats?;
       final savedPrestige = saveData['prestigeData'] as PrestigeData?;
+      final savedAchievements = saveData['achievements'] as List<Achievement>?;
 
       if (savedState != null) {
         // Apply offline progress
@@ -65,6 +76,11 @@ class ComprehensiveGameController extends Notifier<GameState> {
         state = stateWithOffline;
         _stats = savedStats ?? GameStats();
         _prestigeData = savedPrestige ?? PrestigeData();
+
+        // Load achievements
+        if (savedAchievements != null) {
+          _achievementService?.loadAchievements(savedAchievements);
+        }
 
         // Show offline reward if any
         final progress = offlineService.calculateOfflineProgress(
@@ -93,6 +109,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
       state = _createInitialState();
       _stats = GameStats();
       _prestigeData = PrestigeData();
+      _achievementService = AchievementService();
       _startGameLoop();
     }
   }
@@ -127,9 +144,25 @@ class ComprehensiveGameController extends Notifier<GameState> {
       _stats?.updateMaxEnergy(state.energy);
       _stats?.updateMaxEnergyPerSecond(state.getEnergyPerSecond());
 
+      // Check achievements (every 5 seconds to avoid performance issues)
+      if (DateTime.now().second % 5 == 0) {
+        _checkAchievements();
+      }
+
       // Trigger debounced save
       _saveManager?.saveDebounced(state);
     }
+  }
+
+  /// Check achievements
+  void _checkAchievements() {
+    if (_achievementService == null || _stats == null) return;
+
+    _achievementService!.checkAchievements(
+      stats: _stats!,
+      gameState: state,
+      prestigeData: _prestigeData,
+    );
   }
 
   // ========== GENERATOR ACTIONS ==========
@@ -218,6 +251,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
       gameState: state,
       stats: _stats,
       prestigeData: _prestigeData,
+      achievements: _achievementService?.achievements,
     );
   }
 
@@ -229,6 +263,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
     state = _createInitialState();
     _stats = GameStats();
     _prestigeData = PrestigeData();
+    _achievementService?.resetAll();
 
     LoggerService.info('Game reset completed');
   }
@@ -237,6 +272,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
 
   GameStats? get stats => _stats;
   PrestigeData? get prestigeData => _prestigeData;
+  AchievementService? get achievementService => _achievementService;
   Decimal get energy => state.energy;
   Decimal get energyPerSecond => state.getEnergyPerSecond();
   List<Generator> get generators => state.generators;
