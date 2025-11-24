@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:idle_universe/core/config/game_config.dart';
 import 'package:idle_universe/core/models/models.dart';
 import 'package:idle_universe/core/services/services.dart';
 
@@ -34,7 +35,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
     try {
       // Initialize save manager
       _saveManager = await SaveManager.initialize(
-        autoSaveInterval: const Duration(seconds: 30),
+        autoSaveInterval: Duration(seconds: GameConfig.autoSaveIntervalSeconds),
         onSaveSuccess: () {
           LoggerService.success('Game saved successfully');
         },
@@ -52,7 +53,10 @@ class ComprehensiveGameController extends Notifier<GameState> {
 
       if (savedState != null) {
         // Apply offline progress
-        final offlineService = OfflineProgressService();
+        final offlineService = OfflineProgressService(
+          maxOfflineHours: GameConfig.offlineProgressCapHours,
+          offlinePenalty: GameConfig.offlineProgressPenalty,
+        );
         final stateWithOffline = offlineService.applyOfflineProgress(
           gameState: savedState,
           lastUpdateTime: savedState.lastUpdateTime,
@@ -96,58 +100,19 @@ class ComprehensiveGameController extends Notifier<GameState> {
   /// Create initial game state with default generators
   GameState _createInitialState() {
     return GameState(
-      generators: _createDefaultGenerators(),
+      generators: GameConfig.getDefaultGenerators(),
     );
-  }
-
-  /// Create default generators for new game
-  List<Generator> _createDefaultGenerators() {
-    return [
-      Generator(
-        id: 'energy_gen_1',
-        name: 'Energy Collector',
-        description: 'Basic energy collection device',
-        baseCost: Decimal.fromInt(10),
-        baseProduction: Decimal.one,
-        costMultiplier: 1.15,
-        icon: '⚡',
-      ),
-      Generator(
-        id: 'energy_gen_2',
-        name: 'Solar Panel',
-        description: 'Harness energy from stars',
-        baseCost: Decimal.fromInt(100),
-        baseProduction: Decimal.fromInt(5),
-        costMultiplier: 1.15,
-        icon: '☀️',
-      ),
-      Generator(
-        id: 'energy_gen_3',
-        name: 'Fusion Reactor',
-        description: 'Advanced fusion technology',
-        baseCost: Decimal.fromInt(1000),
-        baseProduction: Decimal.fromInt(25),
-        costMultiplier: 1.15,
-        icon: '⚛️',
-      ),
-      Generator(
-        id: 'energy_gen_4',
-        name: 'Quantum Generator',
-        description: 'Quantum energy extraction',
-        baseCost: Decimal.fromInt(10000),
-        baseProduction: Decimal.fromInt(100),
-        costMultiplier: 1.15,
-        icon: '🔮',
-      ),
-    ];
   }
 
   /// Start game loop
   void _startGameLoop() {
     _gameLoop?.cancel();
-    _gameLoop = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      _updateGameState();
-    });
+    _gameLoop = Timer.periodic(
+      Duration(milliseconds: GameConfig.gameLoopTickMs),
+      (timer) {
+        _updateGameState();
+      },
+    );
   }
 
   /// Update game state every tick
