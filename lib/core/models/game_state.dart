@@ -41,11 +41,20 @@ class GameState {
         generators = generators ?? [];
 
   /// Tính tổng năng lượng/giây từ tất cả generators
-  Decimal getEnergyPerSecond() {
+  Decimal getEnergyPerSecond({Map<String, double>? generatorMultipliers}) {
     Decimal total = Decimal.zero;
 
     for (final generator in generators) {
-      final production = generator.getTotalProduction();
+      Decimal production = generator.getTotalProduction();
+
+      // Apply generator-specific multiplier if available
+      if (generatorMultipliers != null &&
+          generatorMultipliers.containsKey(generator.id)) {
+        final genMultiplier =
+            Decimal.parse(generatorMultipliers[generator.id]!.toString());
+        production = NumberFormatter.toDecimal(production * genMultiplier);
+      }
+
       total = NumberFormatter.toDecimal(total + production);
     }
 
@@ -63,8 +72,8 @@ class GameState {
     if (elapsedSeconds <= 0) return Decimal.zero;
 
     final energyPerSec = getEnergyPerSecond();
-    final earned =
-        NumberFormatter.toDecimal(energyPerSec * Decimal.fromInt(elapsedSeconds));
+    final earned = NumberFormatter.toDecimal(
+        energyPerSec * Decimal.fromInt(elapsedSeconds));
 
     energy = NumberFormatter.toDecimal(energy + earned);
     totalEnergyEarned = NumberFormatter.toDecimal(totalEnergyEarned + earned);

@@ -145,6 +145,9 @@ class ComprehensiveGameController extends Notifier<GameState> {
 
   /// Update game state every tick
   void _updateGameState() {
+    // Update global multiplier from upgrades
+    _updateMultipliers();
+
     final earned = state.updateEnergy();
 
     // IMPORTANT: Must reassign state to trigger Riverpod update
@@ -153,7 +156,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
 
       // Update stats
       _stats?.updateMaxEnergy(state.energy);
-      _stats?.updateMaxEnergyPerSecond(state.getEnergyPerSecond());
+      _stats?.updateMaxEnergyPerSecond(_getEnergyPerSecondWithMultipliers());
 
       // Check achievements (every 5 seconds to avoid performance issues)
       if (DateTime.now().second % 5 == 0) {
@@ -163,6 +166,35 @@ class ComprehensiveGameController extends Notifier<GameState> {
       // Trigger debounced save
       _saveManager?.saveDebounced(state);
     }
+  }
+
+  /// Update multipliers from upgrades
+  void _updateMultipliers() {
+    if (_upgradeService == null) return;
+
+    // Update global multiplier in game state
+    final globalMult = _upgradeService!.getGlobalMultiplier();
+    if (state.globalMultiplier != globalMult) {
+      state = state.copyWith(globalMultiplier: globalMult);
+    }
+  }
+
+  /// Get energy per second with all multipliers applied
+  Decimal _getEnergyPerSecondWithMultipliers() {
+    if (_upgradeService == null) {
+      return state.getEnergyPerSecond();
+    }
+
+    // Build generator multipliers map
+    final generatorMultipliers = <String, double>{};
+    for (final generator in state.generators) {
+      final mult = _upgradeService!.getGeneratorMultiplier(generator.id);
+      if (mult > 1.0) {
+        generatorMultipliers[generator.id] = mult;
+      }
+    }
+
+    return state.getEnergyPerSecond(generatorMultipliers: generatorMultipliers);
   }
 
   /// Check achievements
@@ -224,8 +256,13 @@ class ComprehensiveGameController extends Notifier<GameState> {
 
   /// Manual click to add energy
   void clickEnergy({Decimal? amount}) {
-    final clickAmount = amount ?? Decimal.one;
-    state.addEnergy(clickAmount);
+    final baseAmount = amount ?? GameConfig.manualClickEnergy;
+
+    // Apply click power multiplier from upgrades
+    final clickMultiplier = _upgradeService?.getClickPowerMultiplier() ?? 1.0;
+    final finalAmount = baseAmount * Decimal.fromInt(clickMultiplier.toInt());
+
+    state.addEnergy(finalAmount);
     state = state.copyWith();
     _stats?.incrementClicks();
   }
@@ -302,7 +339,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
   AchievementService? get achievementService => _achievementService;
   UpgradeService? get upgradeService => _upgradeService;
   Decimal get energy => state.energy;
-  Decimal get energyPerSecond => state.getEnergyPerSecond();
+  Decimal get energyPerSecond => _getEnergyPerSecondWithMultipliers();
   List<Generator> get generators => state.generators;
 }
 
