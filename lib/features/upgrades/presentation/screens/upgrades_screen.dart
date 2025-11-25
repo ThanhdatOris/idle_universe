@@ -332,9 +332,15 @@ class UpgradesScreen extends ConsumerWidget {
   }) {
     final canAfford = gameState.canAfford(upgrade.cost);
 
-    return UpgradeListItem(
-      upgrade: upgrade,
-      canAfford: canAfford,
+    return ItemCard(
+      id: upgrade.id,
+      name: upgrade.name,
+      description: upgrade.description,
+      icon: upgrade.icon,
+      cost: upgrade.cost,
+      canAfford: canAfford && isAvailable,
+      owned: isPurchased ? 1 : 0,
+      productionText: _getUpgradeEffectText(upgrade),
       onPurchase: isAvailable && canAfford
           ? () {
               final success = controller.purchaseUpgrade(upgrade.id);
@@ -349,6 +355,33 @@ class UpgradesScreen extends ConsumerWidget {
               }
             }
           : null,
+      accentColor: isPurchased
+          ? Colors.blue
+          : isLocked
+              ? Colors.grey
+              : Colors.purple,
+      isLocked: isLocked,
+      lockReason: isLocked && upgrade.requirementId != null
+          ? 'Requires previous upgrade'
+          : null,
     );
+  }
+
+  /// Get upgrade effect text
+  String _getUpgradeEffectText(Upgrade upgrade) {
+    switch (upgrade.type) {
+      case UpgradeType.clickPower:
+        return '${upgrade.effectValue.toStringAsFixed(1)}x Click Power';
+      case UpgradeType.globalMultiplier:
+        return '${upgrade.effectValue.toStringAsFixed(1)}x All Production';
+      case UpgradeType.generatorMultiplier:
+        return '${upgrade.effectValue.toStringAsFixed(1)}x Generator';
+      case UpgradeType.unlockGenerator:
+        return 'Unlocks New Generator';
+      case UpgradeType.costReduction:
+        return '${(upgrade.effectValue * 100).toStringAsFixed(0)}% Cost Reduction';
+      case UpgradeType.special:
+        return 'Special Effect';
+    }
   }
 }

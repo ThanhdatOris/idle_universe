@@ -187,9 +187,65 @@ class AchievementsScreen extends ConsumerWidget {
         ) ??
         0.0;
 
-    return AchievementListItem(
-      achievement: achievement,
-      progress: progress,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: achievement.isUnlocked
+              ? [
+                  Colors.amber.withValues(alpha: 0.2),
+                  Colors.orange.withValues(alpha: 0.1),
+                ]
+              : [
+                  Colors.grey.withValues(alpha: 0.1),
+                  Colors.grey.withValues(alpha: 0.05),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: achievement.isUnlocked
+              ? Colors.amber.withValues(alpha: 0.5)
+              : Colors.grey.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        children: [
+          CustomListItem(
+            leadingWidget: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: achievement.isUnlocked
+                    ? Colors.amber.withValues(alpha: 0.3)
+                    : Colors.grey.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                achievement.icon,
+                style: const TextStyle(fontSize: 24),
+              ),
+            ),
+            title: achievement.name,
+            subtitle: achievement.description,
+            trailing: achievement.isUnlocked
+                ? const Icon(Icons.check_circle, color: Colors.amber)
+                : Text(
+                    '${(progress * 100).toStringAsFixed(0)}%',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+          ),
+          if (!achievement.isUnlocked)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
