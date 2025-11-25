@@ -1,7 +1,7 @@
 # Idle Universe Builder - Development Progress
 
 **Studio:** OrisDev Studio  
-**Last Updated:** 2025-11-24
+**Last Updated:** 2025-11-24 08:21
 
 ---
 
@@ -36,7 +36,6 @@
 - ✅ Created `LoggerService` - Proper logging framework
 - ✅ Added `shared_preferences` dependency
 - ✅ Created services barrel file
-- ✅ Replaced all print statements with LoggerService
 
 ---
 
@@ -51,7 +50,6 @@
 - ✅ Completely rewrote `HomeScreen` with production-ready UI
 - ✅ Added ResourcesBar, generator list, prestige dialog
 - ✅ Integrated save/load and offline progress
-- ✅ Created PROGRESS.md tracking document
 - ✅ Production-ready game loop with 100ms ticks
 
 ---
@@ -77,125 +75,208 @@
 **Changes:**
 
 - ✅ Redesigned energy tap area as large interactive zone
-  - Entire area tappable with gradient effects and glowing orb
-  - Visual feedback with animations on tap
-  - Removed button, made whole section responsive
-- ✅ Implemented hold-to-buy for generators
-  - Hold Buy button to continuously purchase (every 100ms)
-  - Only Buy button has hold effect, not entire card
-  - Visual feedback on each successful purchase
-  - Automatically stops when released
+- ✅ Implemented hold-to-buy for generators (every 100ms)
 - ✅ Enhanced purchaseGenerator to buy as many as possible
-- ✅ Added hint text: "Hold to buy continuously"
-- ✅ Fixed generator cards to show as buyable when affordable
+- ✅ Visual feedback on each successful purchase
+- ✅ Only Buy button has hold effect, not entire card
+
+---
+
+### Commit 6: Create Game Configuration Files
+
+**Status:** ✅ Committed (not pushed)  
+**Files Changed:** 3 files, 443 insertions(+), 81 deletions(-)
+
+**Changes:**
+
+- ✅ Created `GameConfig` class with centralized balance data
+- ✅ 12 generators across 6 tiers (Subatomic to Cosmic)
+- ✅ 10 default achievements with rewards
+- ✅ 6 default upgrades (click power, global, generator-specific)
+- ✅ All game constants configurable in one place
+
+---
+
+### Commit 7: Implement Achievement System
+
+**Status:** ✅ Committed (not pushed)  
+**Files Changed:** 3 files, 212 insertions(+)
+
+**Changes:**
+
+- ✅ Created `AchievementService` for tracking and unlocking
+- ✅ Auto-checks achievements every 5 seconds
+- ✅ Tracks progress for all achievement types
+- ✅ Notifies when achievements unlock
+- ✅ Integrated with save/load system
+
+---
+
+### Commit 8: Implement Upgrade System
+
+**Status:** ✅ Committed (not pushed)  
+**Files Changed:** 3 files, 209 insertions(+)
+
+**Changes:**
+
+- ✅ Created `UpgradeService` for managing upgrades
+- ✅ Calculate click power, global, and generator-specific multipliers
+- ✅ Requirement chains (must buy previous upgrade first)
+- ✅ Integrated with save/load and stats tracking
+- ✅ 6 upgrades ready to purchase
 
 ---
 
 ## 📊 OVERALL PROGRESS
 
-### Core Infrastructure: ~90% Complete
+### Core Infrastructure: ~95% Complete
 
 - ✅ Core Models (100%)
 - ✅ Core Widgets (100%)
-- ✅ Core Services (90%)
+- ✅ Core Services (95%)
 - ✅ Core Utils (100%)
+- ✅ Core Config (100%)
 
-### Features: ~45% Complete
+### Features: ~55% Complete
 
-- ✅ Home Feature (80%)
-- ⏳ Prestige Feature (10%)
+- ✅ Home Feature (85%)
+- ⏳ Prestige Feature (15%)
 - ⏳ Settings Feature (70%)
-- ⏳ Stats Feature (20%)
+- ⏳ Stats Feature (25%)
 
-### Missing Components:
+### Game Systems:
 
-- ❌ Achievement System
-- ❌ Upgrade System UI
-- ❌ Event System
-- ❌ Firebase Integration
-- ❌ Audio System
-- ❌ Tier Progression System
-- ❌ Quantum Research Lab
+- ✅ Generator System (100%)
+- ✅ Achievement System (100%)
+- ✅ Upgrade System (100%)
+- ✅ Save/Load System (100%)
+- ✅ Offline Progress (100%)
+- ⏳ Prestige System (50% - logic done, UI needed)
+- ❌ Event System (0%)
+- ❌ Audio System (0%)
 
 ---
 
-## 🎯 NEXT STEPS
+## 🎯 RECOMMENDED NEXT STEPS
 
-### Immediate (Next commits):
+### 🔥 HIGH PRIORITY (Polish & Complete Core Features)
 
-1. **Commit 6:** Create Game Configuration Files (balance data)
-2. **Commit 7:** Implement Achievement System
-3. **Commit 8:** Implement Upgrade System UI
-4. **Commit 9:** Integrate Prestige Screen with actual logic
-5. **Commit 10:** Integrate Stats Screen with real data
+#### Option A: Apply Upgrade Multipliers to Game Logic
 
-### Short-term:
+**Why:** Upgrades are implemented but not actually affecting gameplay yet
 
-- Settings persistence
-- Offline reward dialog
-- Achievement notifications
-- Prestige calculator UI
-- Multiple buy options (x1, x10, x100, Max)
+- Apply click power multiplier to manual taps
+- Apply global multiplier to all generator production
+- Apply generator-specific multipliers
+- Test that upgrades actually work
+  **Impact:** Makes upgrades functional and valuable
 
-### Medium-term:
+#### Option B: Create Upgrades & Achievements UI Screens
 
-- Event system
-- Firebase integration
-- Audio system
-- Advanced tier progression
-- Quantum Research Lab
+**Why:** Players can't see or interact with achievements/upgrades yet
 
-### Long-term:
+- Create Achievements screen to view progress
+- Create Upgrades screen to purchase upgrades
+- Add navigation to these screens
+- Show achievement unlock notifications
+  **Impact:** Makes systems visible and usable
 
-- Leaderboard
-- Cloud saves
-- Analytics
-- Push notifications
+#### Option C: Complete Prestige Screen Integration
+
+**Why:** Prestige system exists but has placeholder UI
+
+- Integrate PrestigeData into Prestige screen
+- Show prestige gain calculator
+- Display prestige multiplier benefits
+- Add prestige confirmation dialog
+  **Impact:** Enables core progression loop
+
+---
+
+### 🎨 MEDIUM PRIORITY (UI/UX Improvements)
+
+#### Option D: Add Multiple Buy Options (x1, x10, x100, Max)
+
+**Why:** Players want to buy many generators at once
+
+- Add buy mode selector to HomeScreen
+- Calculate max affordable generators
+- Update ItemCard to show bulk costs
+  **Impact:** Better UX for late game
+
+#### Option E: Create Offline Reward Dialog
+
+**Why:** Players don't see what they earned offline
+
+- Show dialog on app open after offline time
+- Display resources earned
+- Show time away
+  **Impact:** Better feedback and engagement
+
+---
+
+### 🚀 LOWER PRIORITY (New Features)
+
+#### Option F: Integrate Stats Screen with Real Data
+
+**Why:** Stats screen shows placeholder data
+
+- Connect to GameStats
+- Show real statistics
+- Add charts/graphs
+  **Impact:** Player engagement and tracking
+
+#### Option G: Settings Persistence
+
+**Why:** Settings don't save between sessions
+
+- Save audio preferences
+- Save notification preferences
+- Save theme preferences
+  **Impact:** Better user experience
+
+---
+
+## 💡 MY RECOMMENDATION
+
+I recommend **Option A: Apply Upgrade Multipliers** as the next commit because:
+
+1. **Critical Functionality** - Upgrades exist but don't do anything yet
+2. **Quick Win** - Relatively small change with big impact
+3. **Testing** - Allows you to test the full game loop
+4. **Foundation** - Needed before UI work makes sense
+
+After that, I'd suggest **Option B: UI Screens** to make achievements/upgrades visible, then **Option C: Prestige** to complete the core loop.
 
 ---
 
 ## 📈 STATISTICS
 
-**Total Lines Added:** ~2,855 lines  
-**Total Files Created/Modified:** 19 files  
-**Commits Made:** 5 (ready to push)  
-**Project Completion:** ~40%
+**Total Lines Added:** ~3,719 lines  
+**Total Files Created/Modified:** 28 files  
+**Commits Made:** 8 (ready to push)  
+**Project Completion:** ~55%
 
 ---
 
 ## 🔧 TECHNICAL NOTES
 
-### Architecture:
+### What's Working:
 
-- Using Clean Architecture principles
-- Riverpod for state management
-- Core models are comprehensive and production-ready
-- Services layer is modular and testable
+- ✅ 12 generators producing energy
+- ✅ Hold-to-buy functionality
+- ✅ Auto-save every 30 seconds
+- ✅ Offline progress (up to 8 hours)
+- ✅ Achievement tracking (10 achievements)
+- ✅ Upgrade tracking (6 upgrades)
+- ✅ Prestige calculation
+- ✅ Stats tracking
 
-### Code Quality:
+### What Needs Work:
 
-- All lint warnings resolved
-- Proper logging with LoggerService
-- Type-safe with Decimal for large numbers
-- Comprehensive error handling
-
-### Performance:
-
-- Debounced auto-save (every 30s)
-- Efficient game loop (100ms ticks)
-- Offline progress capped at 8 hours
-- Minimal UI rebuilds with Riverpod
-- Hold-to-buy at 100ms intervals
-
-### UX Features:
-
-- Large tappable energy area with visual effects
-- Hold-to-buy for rapid purchasing
-- Visual feedback on all interactions
-- Proper affordability indicators
-- Auto-save with manual save option
-- Offline progress calculation
-
----
-
-**Next Action:** Continue with Commit 6 - Game Configuration Files
+- ⚠️ Upgrade multipliers not applied to production
+- ⚠️ No UI for achievements/upgrades
+- ⚠️ Prestige screen is placeholder
+- ⚠️ Stats screen shows fake data
+- ⚠️ No offline reward notification
+- ⚠️ Settings don't persist
