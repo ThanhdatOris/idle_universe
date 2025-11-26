@@ -23,6 +23,14 @@ class ComprehensiveGameController extends Notifier<GameState> {
   AchievementService? _achievementService;
   UpgradeService? _upgradeService;
 
+  // Callback for achievement notifications
+  void Function(Achievement)? _onAchievementUnlocked;
+
+  /// Set achievement unlock callback (called from UI)
+  void setAchievementCallback(void Function(Achievement) callback) {
+    _onAchievementUnlocked = callback;
+  }
+
   @override
   GameState build() {
     _initializeGame();
@@ -50,8 +58,9 @@ class ComprehensiveGameController extends Notifier<GameState> {
       // Initialize achievement service
       _achievementService = AchievementService(
         onAchievementUnlocked: (achievement) {
-          // TODO: Show notification/dialog
           LoggerService.success('🏆 ${achievement.name} unlocked!');
+          // Call UI callback if set
+          _onAchievementUnlocked?.call(achievement);
         },
       );
 

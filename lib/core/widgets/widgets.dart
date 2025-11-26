@@ -1,4 +1,5 @@
 // Export all widgets
+export 'achievement_notification.dart';
 export 'cosmic_background.dart';
 export 'custom_appbar.dart';
 export 'item_card.dart';
