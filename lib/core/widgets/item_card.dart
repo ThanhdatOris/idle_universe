@@ -25,6 +25,7 @@ class ItemCard extends StatelessWidget {
   final Color? accentColor;
   final bool isLocked;
   final String? lockReason;
+  final String? milestoneInfo; // "Next: 25 owned → 2x"
 
   const ItemCard({
     super.key,
@@ -43,6 +44,7 @@ class ItemCard extends StatelessWidget {
     this.accentColor,
     this.isLocked = false,
     this.lockReason,
+    this.milestoneInfo,
   });
 
   @override
@@ -169,6 +171,43 @@ class ItemCard extends StatelessWidget {
                         productionText ?? effectText ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+
+              // Milestone info
+              if (milestoneInfo != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: Colors.purple.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.emoji_events,
+                        size: 14,
+                        color: Colors.purple,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        milestoneInfo!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.purple,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

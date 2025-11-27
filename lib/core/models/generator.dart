@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:idle_universe/core/models/generator_milestone.dart';
 import 'package:idle_universe/core/utils/utils.dart';
 
 /// Generator model - Máy phát điện/Building trong idle game
@@ -7,6 +8,7 @@ import 'package:idle_universe/core/utils/utils.dart';
 /// - Base cost và cost multiplier (giá tăng theo số lượng mua)
 /// - Base production (năng lượng/giây)
 /// - Owned count (số lượng đã sở hữu)
+/// - Milestones (bonus khi đạt số lượng nhất định)
 class Generator {
   final String id;
   final String name;
@@ -28,6 +30,9 @@ class Generator {
   /// Icon/emoji cho UI
   final String icon;
 
+  /// Milestones for this generator
+  List<GeneratorMilestone> milestones;
+
   Generator({
     required this.id,
     required this.name,
@@ -37,7 +42,8 @@ class Generator {
     this.costMultiplier = 1.15,
     this.owned = 0,
     this.icon = '⚡',
-  });
+    List<GeneratorMilestone>? milestones,
+  }) : milestones = milestones ?? MilestoneConfig.getDefaultMilestones();
 
   /// Tính giá hiện tại dựa trên số lượng đã sở hữu
   /// Formula: baseCost * (costMultiplier ^ owned)
@@ -56,17 +62,58 @@ class Generator {
   }
 
   /// Tính tổng production của tất cả generators đã sở hữu
-  /// (chưa tính global multipliers từ upgrades/prestige)
+  /// (bao gồm milestone multipliers, chưa tính global multipliers)
   Decimal getTotalProduction() {
     if (owned == 0) return Decimal.zero;
 
     final ownedDecimal = Decimal.fromInt(owned);
-    return NumberFormatter.toDecimal(baseProduction * ownedDecimal);
+    final baseTotal = baseProduction * ownedDecimal;
+
+    // Apply milestone multipliers
+    final milestoneMultiplier = getMilestoneMultiplier();
+    final finalProduction =
+        baseTotal * Decimal.parse(milestoneMultiplier.toString());
+
+    return NumberFormatter.toDecimal(finalProduction);
+  }
+
+  /// Get total milestone multiplier
+  double getMilestoneMultiplier() {
+    double multiplier = 1.0;
+    for (final milestone in milestones) {
+      if (milestone.isUnlocked) {
+        multiplier *= milestone.multiplier;
+      }
+    }
+    return multiplier;
+  }
+
+  /// Check and unlock milestones based on current owned count
+  /// Returns list of newly unlocked milestones
+  List<GeneratorMilestone> checkMilestones() {
+    final newlyUnlocked = <GeneratorMilestone>[];
+    for (final milestone in milestones) {
+      if (milestone.checkUnlock(owned)) {
+        newlyUnlocked.add(milestone);
+      }
+    }
+    return newlyUnlocked;
+  }
+
+  /// Get next milestone to unlock
+  GeneratorMilestone? getNextMilestone() {
+    for (final milestone in milestones) {
+      if (!milestone.isUnlocked) {
+        return milestone;
+      }
+    }
+    return null; // All milestones unlocked
   }
 
   /// Mua thêm generator (tăng owned count)
   void purchase({int amount = 1}) {
     owned += amount;
+    checkMilestones(); // Auto-check milestones after purchase
   }
 
   /// Reset về 0 (dùng khi prestige)
@@ -86,10 +133,18 @@ class Generator {
       'costMultiplier': costMultiplier,
       'owned': owned,
       'icon': icon,
+      'milestones': milestones.map((m) => m.toJson()).toList(),
     };
   }
 
   factory Generator.fromJson(Map<String, dynamic> json) {
+    List<GeneratorMilestone>? milestones;
+    if (json['milestones'] != null) {
+      milestones = (json['milestones'] as List<dynamic>)
+          .map((m) => GeneratorMilestone.fromJson(m as Map<String, dynamic>))
+          .toList();
+    }
+
     return Generator(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -99,6 +154,7 @@ class Generator {
       costMultiplier: (json['costMultiplier'] as num).toDouble(),
       owned: json['owned'] as int,
       icon: json['icon'] as String? ?? '⚡',
+      milestones: milestones,
     );
   }
 

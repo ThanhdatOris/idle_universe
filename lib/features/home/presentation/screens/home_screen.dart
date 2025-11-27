@@ -225,6 +225,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       productionText: generator.owned > 0
           ? '${generator.getTotalProduction().toStringAsFixed(1)}/s'
           : '${generator.baseProduction.toStringAsFixed(1)}/s each',
+      milestoneInfo: _getMilestoneInfo(generator),
       onPurchase: () {
         // Single tap buy
         _buyGenerator(generator.id);
@@ -233,6 +234,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onHoldRelease: () => _stopHoldBuying(),
       accentColor: _getGeneratorColor(index),
     );
+  }
+
+  /// Get milestone info text for generator
+  String? _getMilestoneInfo(Generator generator) {
+    final nextMilestone = generator.getNextMilestone();
+    if (nextMilestone == null) {
+      return null; // All milestones unlocked
+    }
+
+    final remaining = nextMilestone.threshold - generator.owned;
+    return 'Next: ${nextMilestone.threshold} owned → ${nextMilestone.multiplier.toStringAsFixed(1)}x ($remaining more)';
   }
 
   /// Build energy display section - large tappable area
