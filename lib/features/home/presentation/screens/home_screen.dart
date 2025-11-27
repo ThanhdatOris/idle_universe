@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:idle_universe/core/models/models.dart';
 import 'package:idle_universe/core/widgets/widgets.dart';
 import 'package:idle_universe/features/achievements/presentation/screens/achievements_screen.dart';
 import 'package:idle_universe/features/home/presentation/logic/comprehensive_game_controller.dart';
@@ -19,6 +21,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Timer? _holdTimer;
   bool _menuExpanded = false;
   int _tapAnimationKey = 0;
+  BuyQuantity _buyQuantity = BuyQuantity.one;
 
   @override
   void dispose() {
@@ -44,12 +47,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _buyGenerator(String generatorId) {
     final controller = ref.read(comprehensiveGameControllerProvider.notifier);
-    final purchased = controller.purchaseGenerator(generatorId);
+    final gameState = ref.read(comprehensiveGameControllerProvider);
+
+    int amount = _buyQuantity.value;
+
+    // Calculate max affordable if MAX option selected
+    if (_buyQuantity.isMax) {
+      final generator = gameState.getGenerator(generatorId);
+      if (generator != null) {
+        amount = _calculateMaxAffordable(generator, gameState.energy);
+      }
+    }
+
+    final purchased = controller.purchaseGenerator(generatorId, amount: amount);
 
     if (purchased > 0) {
       // Trigger animation
       setState(() => _tapAnimationKey++);
     }
+  }
+
+  /// Calculate maximum number of generators that can be afforded
+  int _calculateMaxAffordable(Generator generator, energy) {
+    int count = 0;
+    var currentEnergy = energy;
+    var currentOwned = generator.owned;
+
+    while (count < 1000) {
+      // Safety limit
+      // Calculate cost for next purchase
+      final costMultiplier = generator.costMultiplier;
+      double multiplier = 1.0;
+      for (int i = 0; i < currentOwned; i++) {
+        multiplier *= costMultiplier;
+      }
+      final cost = generator.baseCost * Decimal.parse(multiplier.toString());
+
+      if (currentEnergy >= cost) {
+        currentEnergy -= cost;
+        currentOwned++;
+        count++;
+      } else {
+        break;
+      }
+    }
+
+    return count;
   }
 
   void _onEnergyTap() {
@@ -78,6 +121,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               energyPerSecond: gameState.getEnergyPerSecond(),
               clickPower: controller.upgradeService?.getClickPowerMultiplier(),
             ),
+
+            // Buy Quantity Selector
+            _buildBuyQuantitySelector(),
 
             // Main content
             Expanded(
@@ -270,6 +316,88 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Build buy quantity selector
+  Widget _buildBuyQuantitySelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.3),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.blue.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.shopping_cart,
+            color: Colors.blue,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Buy:',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: BuyQuantity.values.map((quantity) {
+                  final isSelected = _buyQuantity == quantity;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _buyQuantity = quantity;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.blue.withValues(alpha: 0.3)
+                              : Colors.grey.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? Colors.blue
+                                : Colors.grey.withValues(alpha: 0.5),
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Text(
+                          quantity.label,
+                          style: TextStyle(
+                            color: isSelected ? Colors.blue : Colors.grey[400],
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
