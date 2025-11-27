@@ -15,6 +15,7 @@ class ResourcesBar extends StatelessWidget {
   final Decimal? matterPerSecond;
   final Decimal? entropy;
   final Decimal? darkEnergy;
+  final double? clickPower;
 
   const ResourcesBar({
     super.key,
@@ -24,6 +25,7 @@ class ResourcesBar extends StatelessWidget {
     this.matterPerSecond,
     this.entropy,
     this.darkEnergy,
+    this.clickPower,
   });
 
   @override
@@ -57,6 +59,10 @@ class ResourcesBar extends StatelessWidget {
               perSecond: energyPerSecond,
               color: Colors.amber,
             ),
+            if (clickPower != null && clickPower! > 1.0)
+              _buildClickPowerItem(
+                clickPower: clickPower!,
+              ),
             if (matter != null)
               _buildResourceItem(
                 icon: Icons.scatter_plot,
@@ -122,6 +128,37 @@ class ResourcesBar extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildClickPowerItem({
+    required double clickPower,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.orange.withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.touch_app, color: Colors.orange, size: 18),
+          const SizedBox(width: 4),
+          Text(
+            '${clickPower.toStringAsFixed(1)}x',
+            style: const TextStyle(
+              color: Colors.orange,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

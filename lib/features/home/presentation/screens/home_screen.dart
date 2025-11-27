@@ -76,6 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ResourcesBar(
               energy: gameState.energy,
               energyPerSecond: gameState.getEnergyPerSecond(),
+              clickPower: controller.upgradeService?.getClickPowerMultiplier(),
             ),
 
             // Main content
