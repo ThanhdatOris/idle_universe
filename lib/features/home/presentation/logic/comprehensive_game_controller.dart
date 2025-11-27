@@ -17,6 +17,7 @@ import 'package:idle_universe/core/services/services.dart';
 /// - Achievements
 class ComprehensiveGameController extends Notifier<GameState> {
   Timer? _gameLoop;
+  Timer? _autoClickTimer;
   SaveManager? _saveManager;
   GameStats? _stats;
   PrestigeData? _prestigeData;
@@ -40,6 +41,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
     _initializeGame();
     ref.onDispose(() {
       _gameLoop?.cancel();
+      _autoClickTimer?.cancel();
       _saveManager?.dispose();
     });
     return _createInitialState();
@@ -129,6 +131,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
 
       // Start game loop and auto-save
       _startGameLoop();
+      _updateAutoClickTimer(); // Restore auto-clicker if purchased
       _saveManager!.startAutoSave();
     } catch (e) {
       LoggerService.error('Error initializing game', e);
@@ -264,8 +267,32 @@ class ComprehensiveGameController extends Notifier<GameState> {
     if (success) {
       state = state.copyWith();
       _stats?.incrementUpgradesPurchased();
+
+      // Update auto-click timer if auto-clicker upgrade purchased
+      final upgrade = _upgradeService!.getUpgrade(upgradeId);
+      if (upgrade?.type == UpgradeType.autoClicker) {
+        _updateAutoClickTimer();
+      }
     }
     return success;
+  }
+
+  /// Update auto-click timer based on current auto-click rate
+  void _updateAutoClickTimer() {
+    _autoClickTimer?.cancel();
+
+    final autoClickRate = _upgradeService?.getAutoClickRate() ?? 0.0;
+    if (autoClickRate > 0) {
+      // Calculate interval: 1000ms / rate = ms per click
+      final intervalMs = (1000 / autoClickRate).round();
+      _autoClickTimer = Timer.periodic(
+        Duration(milliseconds: intervalMs),
+        (timer) {
+          clickEnergy(); // Auto-click
+        },
+      );
+      LoggerService.info('Auto-clicker started: $autoClickRate clicks/sec');
+    }
   }
 
   // ========== MANUAL ACTIONS ==========

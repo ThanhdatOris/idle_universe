@@ -372,6 +372,8 @@ class UpgradesScreen extends ConsumerWidget {
     switch (upgrade.type) {
       case UpgradeType.clickPower:
         return '${upgrade.effectValue.toStringAsFixed(1)}x Click Power';
+      case UpgradeType.autoClicker:
+        return 'Auto-click ${upgrade.effectValue.toStringAsFixed(0)} times/sec';
       case UpgradeType.globalMultiplier:
         return '${upgrade.effectValue.toStringAsFixed(1)}x All Production';
       case UpgradeType.generatorMultiplier:

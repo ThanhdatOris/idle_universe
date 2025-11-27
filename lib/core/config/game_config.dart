@@ -322,6 +322,37 @@ class GameConfig {
         requirementId: 'upg_click_50x',
       ),
 
+      // Auto-clicker upgrades
+      Upgrade(
+        id: 'upg_auto_click_1',
+        name: 'Auto-Clicker I',
+        description: 'Automatically click 1 time per second',
+        cost: Decimal.fromInt(50000),
+        type: UpgradeType.autoClicker,
+        effectValue: 1.0, // 1 click/second
+        icon: '🤖',
+      ),
+      Upgrade(
+        id: 'upg_auto_click_5',
+        name: 'Auto-Clicker II',
+        description: 'Automatically click 5 times per second',
+        cost: Decimal.fromInt(5000000),
+        type: UpgradeType.autoClicker,
+        effectValue: 5.0, // 5 clicks/second
+        icon: '🤖⚡',
+        requirementId: 'upg_auto_click_1',
+      ),
+      Upgrade(
+        id: 'upg_auto_click_10',
+        name: 'Auto-Clicker III',
+        description: 'Automatically click 10 times per second',
+        cost: Decimal.fromInt(500000000),
+        type: UpgradeType.autoClicker,
+        effectValue: 10.0, // 10 clicks/second
+        icon: '🤖💥',
+        requirementId: 'upg_auto_click_5',
+      ),
+
       // Global multiplier upgrades
       Upgrade(
         id: 'upg_global_2x',

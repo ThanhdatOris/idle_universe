@@ -158,6 +158,9 @@ enum UpgradeType {
   /// Tăng click power
   clickPower,
 
+  /// Auto-clicker (tự động click X lần/giây)
+  autoClicker,
+
   /// Unlock generator mới
   unlockGenerator,
 

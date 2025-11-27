@@ -125,11 +125,23 @@ class UpgradeService {
         targetId: generatorId);
   }
 
+  /// Get auto-click rate (clicks per second)
+  double getAutoClickRate() {
+    double totalRate = 0.0;
+    for (final upgrade in purchasedUpgrades) {
+      if (upgrade.type == UpgradeType.autoClicker) {
+        totalRate += upgrade.effectValue;
+      }
+    }
+    return totalRate;
+  }
+
   /// Get all active multipliers
   Map<String, double> getAllMultipliers() {
     return {
       'clickPower': getClickPowerMultiplier(),
       'global': getGlobalMultiplier(),
+      'autoClickRate': getAutoClickRate(),
     };
   }
 
