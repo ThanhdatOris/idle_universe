@@ -24,13 +24,13 @@ class GameConfig {
 
   // ========== PRESTIGE CONSTANTS ==========
 
-  /// Minimum energy for first prestige
+  /// Minimum energy for first prestige (1 Million)
   static final Decimal minPrestigeEnergy = Decimal.fromInt(1000000);
 
-  /// Prestige formula exponent
-  static const double prestigeExponent = 0.5;
+  /// Prestige formula exponent (increased for better scaling)
+  static const double prestigeExponent = 0.6;
 
-  /// Prestige formula divisor
+  /// Prestige formula divisor (1 Million)
   static final Decimal prestigeDivisor = Decimal.fromInt(1000000);
 
   // ========== GENERATORS CONFIGURATION ==========

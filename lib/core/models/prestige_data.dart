@@ -20,10 +20,10 @@ class PrestigeData {
   Decimal prestigePointsSpent;
 
   /// Multiplier từ prestige (tính từ prestigePoints)
-  /// Formula thường dùng: 1 + (prestigePoints * 0.01) = +1% per point
+  /// Formula: 1 + (prestigePoints * 0.05) = +5% per point (increased from 1%)
   double get prestigeMultiplier {
     final points = prestigePoints.toDouble();
-    return 1.0 + (points * 0.01); // +1% mỗi prestige point
+    return 1.0 + (points * 0.05); // +5% mỗi prestige point (was 1%)
   }
 
   /// Thời gian prestige lần cuối
@@ -43,23 +43,25 @@ class PrestigeData {
         prestigePointsSpent = prestigePointsSpent ?? Decimal.zero;
 
   /// Tính số prestige points sẽ nhận được nếu prestige bây giờ
-  /// Formula: sqrt(totalEnergyEarned / 1e15) - già có
+  /// NEW Formula: (totalEnergyEarned / 1e6) ^ 0.6
   ///
   /// Ví dụ:
-  /// - 1e15 energy → 1 point
-  /// - 1e16 energy → 3.16 points
-  /// - 1e18 energy → 31.6 points
+  /// - 1M energy → 1 point
+  /// - 10M energy → 3.98 points
+  /// - 100M energy → 15.85 points
+  /// - 1B energy → 63.1 points
   static Decimal calculatePrestigeGain(
       Decimal totalEnergyEarned, Decimal currentPrestigePoints) {
-    final threshold = Decimal.parse('1000000000000000'); // 1e15
+    final threshold = Decimal.fromInt(1000000); // 1M (was 1e15)
 
     if (totalEnergyEarned < threshold) return Decimal.zero;
 
-    // sqrt(totalEnergy / 1e15)
+    // (totalEnergy / 1M) ^ 0.6
     final ratio = totalEnergyEarned / threshold;
     final ratioDouble = ratio.toDouble();
-    final sqrtValue = math.sqrt(ratioDouble);
-    final potentialPoints = Decimal.parse(sqrtValue.toString());
+    final exponent = 0.6; // Increased from 0.5 for better scaling
+    final powerValue = math.pow(ratioDouble, exponent);
+    final potentialPoints = Decimal.parse(powerValue.toString());
 
     // Trừ đi số points đã có (để không bị lặp lại)
     final gain =
