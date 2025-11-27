@@ -17,6 +17,12 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   Timer? _holdTimer;
+  bool _menuExpanded = false;
+  int _tapAnimationKey = 0;
+
+  @override
+  void dispose() {
+    _holdTimer?.cancel();
     super.dispose();
   }
 
