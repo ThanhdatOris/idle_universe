@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:idle_universe/core/widgets/widgets.dart';
+import 'package:idle_universe/features/achievements/presentation/screens/achievements_screen.dart';
 import 'package:idle_universe/features/home/presentation/logic/comprehensive_game_controller.dart';
+import 'package:idle_universe/features/upgrades/presentation/screens/upgrades_screen.dart';
 
 /// HomeScreen - Main game screen with generators
 class HomeScreen extends ConsumerStatefulWidget {
@@ -16,6 +18,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   Timer? _holdTimer;
   int _tapAnimationKey = 0;
+  bool _menuExpanded = false;
 
   @override
   void initState() {
@@ -405,44 +408,145 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Build floating action buttons
+  /// Build floating action buttons with expandable menu
   Widget _buildFloatingActions(BuildContext context, controller) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Save button
-        FloatingActionButton(
-          heroTag: 'save',
-          onPressed: () async {
-            final success = await controller.saveGame();
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(success ? 'Game saved!' : 'Failed to save'),
-                  backgroundColor: success ? Colors.green : Colors.red,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          },
-          backgroundColor: Colors.green,
-          child: const Icon(Icons.save),
-        ),
-        const SizedBox(height: 12),
-
-        // Prestige button (if available)
-        if (controller.canPrestige())
-          FloatingActionButton.extended(
-            heroTag: 'prestige',
-            onPressed: () {
-              _showPrestigeDialog(context, controller);
-            },
-            backgroundColor: Colors.purple,
-            icon: const Icon(Icons.auto_awesome),
-            label: const Text('Prestige'),
+        // Menu items (shown when expanded)
+        if (_menuExpanded) ...[
+          _buildMenuButton(
+            context,
+            icon: Icons.emoji_events,
+            label: 'Achievements',
+            color: Colors.amber,
+            onTap: () => _navigateToAchievements(context),
           ),
+          const SizedBox(height: 12),
+          _buildMenuButton(
+            context,
+            icon: Icons.upgrade,
+            label: 'Upgrades',
+            color: Colors.purple,
+            onTap: () => _navigateToUpgrades(context),
+          ),
+          const SizedBox(height: 12),
+          _buildMenuButton(
+            context,
+            icon: Icons.save,
+            label: 'Save',
+            color: Colors.green,
+            onTap: () => _saveGame(context, controller),
+          ),
+          const SizedBox(height: 12),
+          if (controller.canPrestige())
+            _buildMenuButton(
+              context,
+              icon: Icons.auto_awesome,
+              label: 'Prestige',
+              color: Colors.purple,
+              onTap: () => _showPrestigeDialog(context, controller),
+            ),
+          if (controller.canPrestige()) const SizedBox(height: 12),
+        ],
+
+        // Main menu button
+        FloatingActionButton(
+          heroTag: 'menu',
+          onPressed: () {
+            setState(() {
+              _menuExpanded = !_menuExpanded;
+            });
+          },
+          backgroundColor: _menuExpanded ? Colors.red : Colors.blue,
+          child: AnimatedRotation(
+            turns: _menuExpanded ? 0.125 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: Icon(_menuExpanded ? Icons.close : Icons.menu),
+          ),
+        ),
       ],
     );
+  }
+
+  /// Build individual menu button
+  Widget _buildMenuButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return AnimatedScale(
+      scale: _menuExpanded ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          FloatingActionButton(
+            heroTag: label,
+            mini: true,
+            onPressed: onTap,
+            backgroundColor: color,
+            child: Icon(icon),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Navigate to Achievements screen
+  void _navigateToAchievements(BuildContext context) {
+    setState(() => _menuExpanded = false);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AchievementsScreen(),
+      ),
+    );
+  }
+
+  /// Navigate to Upgrades screen
+  void _navigateToUpgrades(BuildContext context) {
+    setState(() => _menuExpanded = false);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const UpgradesScreen(),
+      ),
+    );
+  }
+
+  /// Save game
+  Future<void> _saveGame(BuildContext context, controller) async {
+    setState(() => _menuExpanded = false);
+    final success = await controller.saveGame();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? 'Game saved!' : 'Failed to save'),
+          backgroundColor: success ? Colors.green : Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   /// Show prestige confirmation dialog
