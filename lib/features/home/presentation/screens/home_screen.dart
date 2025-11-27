@@ -230,165 +230,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ],
         ),
-        child: Column(
-          children: [
-            // Animated energy orb
-            Stack(
-              alignment: Alignment.center,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: 16,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.amber.withValues(alpha: 0.3),
+                  Colors.orange.withValues(alpha: 0.2),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: Colors.amber.withValues(alpha: 0.5),
+                width: 2,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Outer glow
-                Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.amber.withValues(alpha: 0.3),
-                        Colors.amber.withValues(alpha: 0.1),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-                // Middle layer
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.amber.withValues(alpha: 0.6),
-                        Colors.orange.withValues(alpha: 0.3),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.amber.withValues(alpha: 0.5),
-                        blurRadius: 30,
-                        spreadRadius: 10,
-                      ),
-                    ],
-                  ),
-                ),
-                // Icon
                 const Icon(
-                  Icons.bolt,
-                  size: 64,
+                  Icons.touch_app,
                   color: Colors.amber,
+                  size: 32,
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'TAP FOR ENERGY',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber,
+                        letterSpacing: 2,
+                      ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-
-            // Tap instruction
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.amber.withValues(alpha: 0.3),
-                    Colors.orange.withValues(alpha: 0.2),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: Colors.amber.withValues(alpha: 0.5),
-                  width: 2,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.touch_app,
-                    color: Colors.amber,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'TAP FOR ENERGY',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber,
-                          letterSpacing: 2,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Stats row
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStatItem(
-                    context,
-                    icon: Icons.speed,
-                    label: 'Per Second',
-                    value:
-                        '${gameState.getEnergyPerSecond().toStringAsFixed(1)}',
-                    color: Colors.green,
-                  ),
-                  Container(
-                    width: 2,
-                    height: 40,
-                    color: Colors.white.withValues(alpha: 0.2),
-                  ),
-                  _buildStatItem(
-                    context,
-                    icon: Icons.trending_up,
-                    label: 'Total Earned',
-                    value: '${gameState.totalEnergyEarned.toStringAsFixed(0)}',
-                    color: Colors.blue,
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
-    );
-  }
-
-  /// Build stat item
-  Widget _buildStatItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[400],
-              ),
-        ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-        ),
-      ],
     );
   }
 
