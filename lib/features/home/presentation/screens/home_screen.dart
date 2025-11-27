@@ -17,29 +17,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   Timer? _holdTimer;
-  int _tapAnimationKey = 0;
-  bool _menuExpanded = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Setup achievement notification callback after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = ref.read(comprehensiveGameControllerProvider.notifier);
-      final overlay = AchievementNotificationOverlay.of(context);
-
-      if (overlay != null) {
-        controller.setAchievementCallback((achievement) {
-          overlay.showAchievement(achievement);
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _holdTimer?.cancel();
     super.dispose();
   }
 

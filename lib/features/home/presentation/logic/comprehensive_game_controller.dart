@@ -26,6 +26,10 @@ class ComprehensiveGameController extends Notifier<GameState> {
   // Callback for achievement notifications
   void Function(Achievement)? _onAchievementUnlocked;
 
+  // Offline reward data
+  Map<String, dynamic>? _offlineRewardData;
+  bool _offlineRewardShown = false;
+
   /// Set achievement unlock callback (called from UI)
   void setAchievementCallback(void Function(Achievement) callback) {
     _onAchievementUnlocked = callback;
@@ -112,6 +116,9 @@ class ComprehensiveGameController extends Notifier<GameState> {
           LoggerService.info(
             'Offline progress: ${offlineService.formatOfflineMessage(progress)}',
           );
+
+          // Store offline reward data for UI
+          _offlineRewardData = progress;
         }
       } else {
         // New game
@@ -350,6 +357,19 @@ class ComprehensiveGameController extends Notifier<GameState> {
   Decimal get energy => state.energy;
   Decimal get energyPerSecond => _getEnergyPerSecondWithMultipliers();
   List<Generator> get generators => state.generators;
+
+  /// Get offline reward data (null if no reward or already shown)
+  Map<String, dynamic>? get offlineRewardData {
+    if (_offlineRewardShown || _offlineRewardData == null) {
+      return null;
+    }
+    return _offlineRewardData;
+  }
+
+  /// Mark offline reward as shown
+  void markOfflineRewardShown() {
+    _offlineRewardShown = true;
+  }
 }
 
 /// Provider for comprehensive game controller
