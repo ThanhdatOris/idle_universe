@@ -335,7 +335,7 @@ class _ItemCardState extends State<ItemCard> {
                                   Icons.bolt,
                                   size: 14,
                                   color: widget.canAfford
-                                      ? Colors.amber
+                                      ? Colors.white
                                       : Colors.redAccent,
                                 ),
                                 const SizedBox(width: 4),
@@ -344,7 +344,7 @@ class _ItemCardState extends State<ItemCard> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: widget.canAfford
-                                        ? Colors.amber
+                                        ? Colors.white
                                         : Colors.redAccent,
                                     fontWeight: FontWeight.bold,
                                   ),

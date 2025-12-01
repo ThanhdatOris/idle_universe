@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:idle_universe/core/models/models.dart';
+import 'package:idle_universe/core/utils/utils.dart';
 import 'package:idle_universe/core/widgets/widgets.dart';
 import 'package:idle_universe/features/achievements/presentation/screens/achievements_screen.dart';
 import 'package:idle_universe/features/home/presentation/logic/comprehensive_game_controller.dart';
@@ -214,6 +215,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool canAfford,
     int index,
   ) {
+    // Calculate predicted impact (production increase)
+    Decimal productionIncrease;
+    if (generator.owned == 0) {
+      productionIncrease = generator.baseProduction;
+    } else {
+      // For simplicity, showing base production per unit for now
+      // Ideally should calculate based on buy quantity
+      productionIncrease = generator.baseProduction *
+          Decimal.parse(generator.getMilestoneMultiplier().toString());
+    }
+
     return ItemCard(
       id: generator.id,
       name: generator.name,
@@ -223,9 +235,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       canAfford: canAfford,
       owned: generator.owned,
       productionText: generator.owned > 0
-          ? '${generator.getTotalProduction().toStringAsFixed(1)}/s'
-          : '${generator.baseProduction.toStringAsFixed(1)}/s each',
+          ? '${NumberFormatter.format(generator.getTotalProduction())}/s'
+          : '${NumberFormatter.format(generator.baseProduction)}/s each',
       milestoneInfo: _getMilestoneInfo(generator),
+      predictedImpactText: '+${NumberFormatter.format(productionIncrease)}/s',
       onPurchase: () {
         // Single tap buy
         _buyGenerator(generator.id);

@@ -8,13 +8,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AchievementNotificationOverlay(
-      child: MaterialApp(
-        title: 'Idle Universe Builder',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme(),
-        home: const MainScreen(),
-      ),
+    return MaterialApp(
+      title: 'Idle Universe Builder',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.darkTheme(),
+      home: const MainScreen(),
+      builder: (context, child) {
+        return AchievementNotificationOverlay(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }
