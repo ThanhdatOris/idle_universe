@@ -9,7 +9,7 @@ import 'package:idle_universe/core/utils/utils.dart';
 /// - Mô tả và số lượng đã sở hữu
 /// - Chi phí và khả năng mua
 /// - Production/Effect
-class ItemCard extends StatelessWidget {
+class ItemCard extends StatefulWidget {
   final String id;
   final String name;
   final String description;
@@ -26,6 +26,7 @@ class ItemCard extends StatelessWidget {
   final bool isLocked;
   final String? lockReason;
   final String? milestoneInfo; // "Next: 25 owned → 2x"
+  final String? predictedImpactText; // "Sẽ tăng thêm X/s"
 
   const ItemCard({
     super.key,
@@ -45,211 +46,262 @@ class ItemCard extends StatelessWidget {
     this.isLocked = false,
     this.lockReason,
     this.milestoneInfo,
+    this.predictedImpactText,
   });
+
+  @override
+  State<ItemCard> createState() => _ItemCardState();
+}
+
+class _ItemCardState extends State<ItemCard> {
+  bool _isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = accentColor ?? Colors.blue;
+    final color = widget.accentColor ?? Colors.blue;
 
     return Card(
-      elevation: canAfford && !isLocked ? 4 : 2,
+      elevation: widget.canAfford && !widget.isLocked ? 4 : 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: canAfford && !isLocked
+          color: widget.canAfford && !widget.isLocked
               ? color.withValues(alpha: 0.5)
               : Colors.grey.withValues(alpha: 0.2),
-          width: canAfford && !isLocked ? 2 : 1,
+          width: widget.canAfford && !widget.isLocked ? 2 : 1,
         ),
       ),
       child: InkWell(
-        onTap: canAfford && !isLocked ? onPurchase : null,
-        onLongPress: onLongPress,
+        onTap: widget.canAfford && !widget.isLocked ? widget.onPurchase : null,
+        onLongPress: widget.onLongPress,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Icon, Name, Owned count
+              // Header: Icon, Name, Description
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Icon
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          color.withValues(alpha: 0.3),
-                          color.withValues(alpha: 0.1),
-                        ],
+                  // Icon with Badge
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              color.withValues(alpha: 0.3),
+                              color.withValues(alpha: 0.1),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            widget.icon,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        icon,
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                    ),
+                      if (widget.owned > 0)
+                        Positioned(
+                          right: -6,
+                          bottom: -6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(context).cardColor,
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            constraints: const BoxConstraints(minWidth: 20),
+                            child: Text(
+                              '${widget.owned}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(width: 12),
 
-                  // Name and owned count
+                  // Name and Description
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          name,
+                          widget.name,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: isLocked
+                            color: widget.isLocked
                                 ? Colors.grey
                                 : theme.textTheme.titleMedium?.color,
                           ),
                         ),
-                        if (owned > 0)
-                          Text(
-                            'Owned: $owned',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: color,
-                              fontWeight: FontWeight.bold,
+                        const SizedBox(height: 2),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isExpanded = !_isExpanded;
+                            });
+                          },
+                          child: AnimatedCrossFade(
+                            firstChild: Text(
+                              widget.description,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.grey[400],
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            secondChild: Text(
+                              widget.description,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.grey[400],
+                                fontSize: 11,
+                              ),
+                            ),
+                            crossFadeState: _isExpanded
+                                ? CrossFadeState.showSecond
+                                : CrossFadeState.showFirst,
+                            duration: const Duration(milliseconds: 200),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Lock indicator
+                  if (widget.isLocked)
+                    const Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Icon(
+                        Icons.lock,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Footer: Info (Left) and Action (Right)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Left Side: Stats & Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Production/Effect
+                        if (widget.productionText != null ||
+                            widget.effectText != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.trending_up, size: 16, color: color),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    widget.productionText ??
+                                        widget.effectText ??
+                                        '',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: color,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // Milestone
+                        if (widget.milestoneInfo != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.emoji_events,
+                                    size: 16, color: Colors.purple),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    widget.milestoneInfo!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.purple,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // Predicted Impact
+                        if (widget.predictedImpactText != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                  color: Colors.green.withValues(alpha: 0.3)),
+                            ),
+                            child: Text(
+                              widget.predictedImpactText!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                       ],
                     ),
                   ),
 
-                  // Lock indicator
-                  if (isLocked)
-                    Icon(
-                      Icons.lock,
-                      color: Colors.grey,
-                      size: 20,
-                    ),
-                ],
-              ),
+                  const SizedBox(width: 12),
 
-              const SizedBox(height: 8),
-
-              // Description
-              Text(
-                description,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[400],
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              const SizedBox(height: 8),
-
-              // Production/Effect info
-              if (productionText != null || effectText != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.trending_up,
-                        size: 14,
-                        color: color,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        productionText ?? effectText ?? '',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-
-              // Milestone info
-              if (milestoneInfo != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.purple.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: Colors.purple.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.emoji_events,
-                        size: 14,
-                        color: Colors.purple,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        milestoneInfo!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.purple,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-
-              // Cost and purchase button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Cost
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.bolt,
-                        size: 16,
-                        color: canAfford ? Colors.amber : Colors.red,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        NumberFormatter.format(cost),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: canAfford ? Colors.amber : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Purchase button
-                  if (!isLocked)
+                  // Right Side: Buy Button
+                  if (!widget.isLocked)
                     GestureDetector(
-                      onTapDown: canAfford && onLongPress != null
-                          ? (_) => onLongPress?.call()
+                      onTapDown: widget.canAfford && widget.onLongPress != null
+                          ? (_) => widget.onLongPress?.call()
                           : null,
-                      onTapUp: (_) => onHoldRelease?.call(),
-                      onTapCancel: () => onHoldRelease?.call(),
+                      onTapUp: (_) => widget.onHoldRelease?.call(),
+                      onTapCancel: () => widget.onHoldRelease?.call(),
                       child: ElevatedButton(
-                        onPressed: canAfford ? onPurchase : null,
+                        onPressed: widget.canAfford ? widget.onPurchase : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: color,
                           foregroundColor: Colors.white,
@@ -257,32 +309,76 @@ class ItemCard extends StatelessWidget {
                             horizontal: 16,
                             vertical: 8,
                           ),
+                          minimumSize: const Size(80, 52),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          elevation: widget.canAfford ? 2 : 0,
+                          disabledBackgroundColor: Colors.grey[800],
+                          disabledForegroundColor: Colors.grey[500],
                         ),
-                        child: const Text('Buy'),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Buy',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.bolt,
+                                  size: 14,
+                                  color: widget.canAfford
+                                      ? Colors.amber
+                                      : Colors.redAccent,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  NumberFormatter.format(widget.cost),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: widget.canAfford
+                                        ? Colors.amber
+                                        : Colors.redAccent,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   else
-                    Tooltip(
-                      message: lockReason ?? 'Locked',
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'Locked',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: Colors.grey.withValues(alpha: 0.3)),
+                      ),
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.lock, size: 20, color: Colors.grey),
+                          SizedBox(height: 4),
+                          Text(
+                            'Locked',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                 ],

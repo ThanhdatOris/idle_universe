@@ -1,6 +1,8 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:idle_universe/core/models/models.dart';
+import 'package:idle_universe/core/utils/utils.dart';
 import 'package:idle_universe/core/widgets/widgets.dart';
 import 'package:idle_universe/features/home/presentation/logic/comprehensive_game_controller.dart';
 
@@ -331,6 +333,47 @@ class UpgradesScreen extends ConsumerWidget {
     bool isLocked = false,
   }) {
     final canAfford = gameState.canAfford(upgrade.cost);
+    final upgradeService = controller.upgradeService;
+
+    // Calculate predicted impact
+    String? predictedImpactText;
+    if (isAvailable && upgradeService != null) {
+      if (upgrade.type == UpgradeType.globalMultiplier) {
+        // Increase = Current PPS * (Effect - 1)
+        final currentPPS = gameState.energyPerSecond;
+        final increase =
+            currentPPS * Decimal.parse((upgrade.effectValue - 1).toString());
+        if (increase > Decimal.zero) {
+          predictedImpactText = '+${NumberFormatter.format(increase)}/s';
+        }
+      } else if (upgrade.type == UpgradeType.generatorMultiplier &&
+          upgrade.targetId != null) {
+        final generator = gameState.getGenerator(upgrade.targetId!);
+        if (generator != null) {
+          // Calculate current total production of this generator
+          final currentGenMult =
+              upgradeService.getGeneratorMultiplier(generator.id);
+          final globalMult = gameState.globalMultiplier;
+
+          final genTotal = generator.productionPerSecond *
+              Decimal.fromInt(generator.owned) *
+              Decimal.parse(globalMult.toString()) *
+              Decimal.parse(currentGenMult.toString());
+
+          final increase =
+              genTotal * Decimal.parse((upgrade.effectValue - 1).toString());
+          if (increase > Decimal.zero) {
+            predictedImpactText = '+${NumberFormatter.format(increase)}/s';
+          }
+        }
+      } else if (upgrade.type == UpgradeType.clickPower) {
+        predictedImpactText =
+            '+${((upgrade.effectValue - 1) * 100).toStringAsFixed(0)}% Click Power';
+      } else if (upgrade.type == UpgradeType.autoClicker) {
+        predictedImpactText =
+            '+${upgrade.effectValue.toStringAsFixed(0)} Clicks/s';
+      }
+    }
 
     return ItemCard(
       id: upgrade.id,
@@ -341,6 +384,7 @@ class UpgradesScreen extends ConsumerWidget {
       canAfford: canAfford && isAvailable,
       owned: isPurchased ? 1 : 0,
       productionText: _getUpgradeEffectText(upgrade),
+      predictedImpactText: predictedImpactText,
       onPurchase: isAvailable && canAfford
           ? () {
               final success = controller.purchaseUpgrade(upgrade.id);
