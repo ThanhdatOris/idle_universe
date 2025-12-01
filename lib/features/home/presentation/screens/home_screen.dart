@@ -56,44 +56,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (_buyQuantity.isMax) {
       final generator = gameState.getGenerator(generatorId);
       if (generator != null) {
-        amount = _calculateMaxAffordable(generator, gameState.energy);
+        final maxInfo = generator.calculateMaxBuy(gameState.energy);
+        amount = maxInfo['amount'] as int;
       }
     }
 
-    final purchased = controller.purchaseGenerator(generatorId, amount: amount);
+    if (amount > 0) {
+      final purchased =
+          controller.purchaseGenerator(generatorId, amount: amount);
 
-    if (purchased > 0) {
-      // Trigger animation
-      setState(() => _tapAnimationKey++);
-    }
-  }
-
-  /// Calculate maximum number of generators that can be afforded
-  int _calculateMaxAffordable(Generator generator, energy) {
-    int count = 0;
-    var currentEnergy = energy;
-    var currentOwned = generator.owned;
-
-    while (count < 1000) {
-      // Safety limit
-      // Calculate cost for next purchase
-      final costMultiplier = generator.costMultiplier;
-      double multiplier = 1.0;
-      for (int i = 0; i < currentOwned; i++) {
-        multiplier *= costMultiplier;
-      }
-      final cost = generator.baseCost * Decimal.parse(multiplier.toString());
-
-      if (currentEnergy >= cost) {
-        currentEnergy -= cost;
-        currentOwned++;
-        count++;
-      } else {
-        break;
+      if (purchased > 0) {
+        // Trigger animation
+        setState(() => _tapAnimationKey++);
       }
     }
-
-    return count;
   }
 
   void _onEnergyTap() {
@@ -174,17 +150,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final generator = gameState.generators[index];
-                          final cost = generator.getCurrentCost();
-                          final canAfford = gameState.canAfford(cost);
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: _buildGeneratorCard(
                               context,
                               generator,
-                              cost,
-                              canAfford,
                               index,
+                              gameState,
                             ),
                           );
                         },
@@ -210,28 +183,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Build generator card with hold-to-buy functionality
   Widget _buildGeneratorCard(
     BuildContext context,
-    generator,
-    cost,
-    bool canAfford,
+    Generator generator,
     int index,
+    gameState,
   ) {
-    // Calculate predicted impact (production increase)
-    Decimal productionIncrease;
-    if (generator.owned == 0) {
-      productionIncrease = generator.baseProduction;
+    int buyAmount = 1;
+    Decimal displayCost = generator.getCurrentCost();
+    bool canAfford = false;
+
+    // Calculate Buy Amount & Cost
+    if (_buyQuantity.isMax) {
+      final maxInfo = generator.calculateMaxBuy(gameState.energy);
+      int maxAmount = maxInfo['amount'] as int;
+      if (maxAmount > 0) {
+        buyAmount = maxAmount;
+        displayCost = maxInfo['totalCost'] as Decimal;
+        canAfford = true;
+      } else {
+        // Can't afford even 1, show cost of 1
+        buyAmount = 1;
+        displayCost = generator.getCurrentCost();
+        canAfford = false;
+      }
     } else {
-      // For simplicity, showing base production per unit for now
-      // Ideally should calculate based on buy quantity
-      productionIncrease = generator.baseProduction *
-          Decimal.parse(generator.getMilestoneMultiplier().toString());
+      buyAmount = _buyQuantity.value;
+      displayCost = generator.getCostForAmount(buyAmount);
+      canAfford = gameState.energy >= displayCost;
     }
+
+    // Calculate predicted impact (production increase)
+    // We calculate the difference between future production (after purchase) and current production
+    final currentProduction = generator.getTotalProduction();
+
+    // Calculate future production
+    final futureOwned = generator.owned + buyAmount;
+    double futureMultiplier = 1.0;
+    for (final milestone in generator.milestones) {
+      if (futureOwned >= milestone.threshold) {
+        futureMultiplier *= milestone.multiplier;
+      }
+    }
+
+    final futureBaseTotal =
+        generator.baseProduction * Decimal.fromInt(futureOwned);
+    final futureTotalProduction =
+        futureBaseTotal * Decimal.parse(futureMultiplier.toString());
+
+    final productionIncrease = futureTotalProduction - currentProduction;
 
     return ItemCard(
       id: generator.id,
       name: generator.name,
       description: generator.description,
       icon: generator.icon,
-      cost: cost,
+      cost: displayCost,
       canAfford: canAfford,
       owned: generator.owned,
       productionText: generator.owned > 0
@@ -239,6 +244,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           : '${NumberFormatter.format(generator.baseProduction)}/s each',
       milestoneInfo: _getMilestoneInfo(generator),
       predictedImpactText: '+${NumberFormatter.format(productionIncrease)}/s',
+      buyAmount: buyAmount,
       onPurchase: () {
         // Single tap buy
         _buyGenerator(generator.id);
@@ -329,13 +335,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   size: 32,
                 ),
                 const SizedBox(width: 16),
-                Text(
-                  'TAP FOR ENERGY',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber,
-                        letterSpacing: 2,
-                      ),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'TAP FOR ENERGY',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber,
+                                letterSpacing: 2,
+                              ),
+                    ),
+                  ),
                 ),
               ],
             ),

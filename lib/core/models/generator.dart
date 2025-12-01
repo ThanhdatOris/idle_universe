@@ -116,6 +116,61 @@ class Generator {
     checkMilestones(); // Auto-check milestones after purchase
   }
 
+  /// Tính tổng cost để mua thêm [amount] generator
+  Decimal getCostForAmount(int amount) {
+    if (amount <= 0) return Decimal.zero;
+
+    Decimal totalCost = Decimal.zero;
+    double multiplier = 1.0;
+
+    // Calculate current multiplier base (multiplier^owned)
+    for (int i = 0; i < owned; i++) {
+      multiplier *= costMultiplier;
+    }
+
+    for (int i = 0; i < amount; i++) {
+      final multiplierDecimal = Decimal.parse(multiplier.toString());
+      // Use consistent formatting/rounding as getCurrentCost
+      final itemCost = NumberFormatter.toDecimal(baseCost * multiplierDecimal);
+      totalCost += itemCost;
+
+      multiplier *= costMultiplier;
+    }
+    return totalCost;
+  }
+
+  /// Tính số lượng tối đa có thể mua với [energy]
+  /// Trả về Map { 'amount': int, 'totalCost': Decimal }
+  Map<String, dynamic> calculateMaxBuy(Decimal energy) {
+    int count = 0;
+    Decimal totalCost = Decimal.zero;
+    double multiplier = 1.0;
+
+    // Calculate current multiplier base
+    for (int i = 0; i < owned; i++) {
+      multiplier *= costMultiplier;
+    }
+
+    // Limit to 1000 to prevent infinite loops/performance issues
+    while (count < 1000) {
+      final multiplierDecimal = Decimal.parse(multiplier.toString());
+      final itemCost = NumberFormatter.toDecimal(baseCost * multiplierDecimal);
+
+      if (energy >= (totalCost + itemCost)) {
+        totalCost += itemCost;
+        count++;
+        multiplier *= costMultiplier;
+      } else {
+        break;
+      }
+    }
+
+    return {
+      'amount': count,
+      'totalCost': totalCost,
+    };
+  }
+
   /// Reset về 0 (dùng khi prestige)
   void reset() {
     owned = 0;
