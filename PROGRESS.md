@@ -235,7 +235,15 @@
 - Save audio preferences
 - Save notification preferences
 - Save theme preferences
-  **Impact:** Better user experience
+#### Option H: Integrate Flame Engine for Visuals
+
+**Why:** Enhance game feel with particles, animations, and interactive backgrounds
+
+- Add `flame` dependency
+- Create `UniverseBackground` with parallax stars
+- Implement particle effects for clicks and purchases
+- Replace static "Tap Area" with interactive Flame widget
+  **Impact:** Significantly improves visual quality and "juiciness"
 
 ---
 
@@ -248,6 +256,7 @@ I recommend **Option C: Complete Prestige Screen Integration** as the next commi
 3.  **Data Ready** - Logic is implemented, just need UI to show it
 
 After that, **Option E: Offline Reward Dialog** would be good to improve retention.
+Longer term, **Option H: Flame Engine Integration** will be crucial for polishing the game's visuals.
 
 ---
 
