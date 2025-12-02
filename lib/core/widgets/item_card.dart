@@ -66,7 +66,7 @@ class _ItemCardState extends State<ItemCard> {
     if (widget.isLocked) {
       return Card(
         margin: EdgeInsets.zero,
-        color: Colors.grey[900]?.withOpacity(0.5),
+        color: Colors.grey[900]?.withValues(alpha: 0.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: Colors.grey[800]!, width: 1),
@@ -116,11 +116,11 @@ class _ItemCardState extends State<ItemCard> {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 4,
-      shadowColor: color.withOpacity(0.3),
+      shadowColor: color.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -140,10 +140,10 @@ class _ItemCardState extends State<ItemCard> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: color.withOpacity(0.3),
+                        color: color.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Center(
@@ -166,7 +166,7 @@ class _ItemCardState extends State<ItemCard> {
                           border: Border.all(color: Colors.white, width: 1),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 2,
                             ),
                           ],
@@ -306,10 +306,10 @@ class _ItemCardState extends State<ItemCard> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.1),
+                                    color: Colors.green.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
-                                        color: Colors.green.withOpacity(0.3)),
+                                        color: Colors.green.withValues(alpha: 0.3)),
                                   ),
                                   child: Text(
                                     widget.predictedImpactText!,
