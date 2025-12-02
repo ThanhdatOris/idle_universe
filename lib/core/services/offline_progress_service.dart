@@ -38,6 +38,7 @@ class OfflineProgressService {
     required GameState gameState,
     required DateTime lastUpdateTime,
     DateTime? currentTime,
+    Map<String, double>? generatorMultipliers,
   }) {
     final now = currentTime ?? DateTime.now();
     final offlineTime = now.difference(lastUpdateTime);
@@ -60,7 +61,8 @@ class OfflineProgressService {
     final wasCapped = actualSeconds > maxOfflineSeconds;
 
     // Tính energy per second
-    final energyPerSecond = gameState.getEnergyPerSecond();
+    final energyPerSecond = gameState.getEnergyPerSecond(
+        generatorMultipliers: generatorMultipliers);
 
     // Tính tổng energy kiếm được
     var energyEarned = NumberFormatter.toDecimal(
@@ -90,11 +92,13 @@ class OfflineProgressService {
     required GameState gameState,
     required DateTime lastUpdateTime,
     DateTime? currentTime,
+    Map<String, double>? generatorMultipliers,
   }) {
     final progress = calculateOfflineProgress(
       gameState: gameState,
       lastUpdateTime: lastUpdateTime,
       currentTime: currentTime,
+      generatorMultipliers: generatorMultipliers,
     );
 
     final energyEarned = progress['energyEarned'] as Decimal;

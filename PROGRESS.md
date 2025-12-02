@@ -162,14 +162,15 @@
 ### 🔥 HIGH PRIORITY (Polish & Complete Core Features)
 
 #### Option A: Apply Upgrade Multipliers to Game Logic
+**Status:** ✅ Completed
 
-**Why:** Upgrades are implemented but not actually affecting gameplay yet
-
-- Apply click power multiplier to manual taps
-- Apply global multiplier to all generator production
-- Apply generator-specific multipliers
-- Test that upgrades actually work
-  **Impact:** Makes upgrades functional and valuable
+**Changes:**
+- ✅ Modified `GameState` to accept generator multipliers
+- ✅ Updated `ComprehensiveGameController` to calculate and pass multipliers
+- ✅ Updated `OfflineProgressService` to respect generator multipliers
+- ✅ Fixed `clickEnergy` to support fractional multipliers
+- ✅ Fixed initialization order for offline progress
+  **Impact:** Upgrades now correctly affect gameplay (production & clicking)
 
 #### Option B: Create Upgrades & Achievements UI Screens
 
@@ -239,14 +240,13 @@
 
 ## 💡 MY RECOMMENDATION
 
-I recommend **Option A: Apply Upgrade Multipliers** as the next commit because:
+I recommend **Option B: Create Upgrades & Achievements UI Screens** as the next commit because:
 
-1. **Critical Functionality** - Upgrades exist but don't do anything yet
-2. **Quick Win** - Relatively small change with big impact
-3. **Testing** - Allows you to test the full game loop
-4. **Foundation** - Needed before UI work makes sense
+1.  **Visibility** - Players can now earn upgrades/achievements but can't see them
+2.  **Interaction** - Need UI to purchase the upgrades we just enabled
+3.  **Feedback Loop** - Completes the reward cycle for the player
 
-After that, I'd suggest **Option B: UI Screens** to make achievements/upgrades visible, then **Option C: Prestige** to complete the core loop.
+After that, **Option C: Prestige** will complete the core game loop.
 
 ---
 
@@ -274,7 +274,7 @@ After that, I'd suggest **Option B: UI Screens** to make achievements/upgrades v
 
 ### What Needs Work:
 
-- ⚠️ Upgrade multipliers not applied to production
+- ✅ Upgrade multipliers applied to production and clicks
 - ⚠️ No UI for achievements/upgrades
 - ⚠️ Prestige screen is placeholder
 - ⚠️ Stats screen shows fake data

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:idle_universe/core/config/game_config.dart';
 import 'package:idle_universe/core/models/models.dart';
 import 'package:idle_universe/core/services/services.dart';
+import 'package:idle_universe/core/utils/utils.dart';
 
 /// ComprehensiveGameController - Game controller using core models
 ///
@@ -83,34 +84,50 @@ class ComprehensiveGameController extends Notifier<GameState> {
       final savedUpgrades = saveData['upgrades'] as List<Upgrade>?;
 
       if (savedState != null) {
-        // Apply offline progress
-        final offlineService = OfflineProgressService(
-          maxOfflineHours: GameConfig.offlineProgressCapHours,
-          offlinePenalty: GameConfig.offlineProgressPenalty,
-        );
-        final stateWithOffline = offlineService.applyOfflineProgress(
-          gameState: savedState,
-          lastUpdateTime: savedState.lastUpdateTime,
-        );
-
-        state = stateWithOffline;
-        _stats = savedStats ?? GameStats();
-        _prestigeData = savedPrestige ?? PrestigeData();
+        // Load upgrades FIRST so they affect offline progress
+        if (savedUpgrades != null) {
+          _upgradeService?.loadUpgrades(savedUpgrades);
+        }
 
         // Load achievements
         if (savedAchievements != null) {
           _achievementService?.loadAchievements(savedAchievements);
         }
 
-        // Load upgrades
-        if (savedUpgrades != null) {
-          _upgradeService?.loadUpgrades(savedUpgrades);
+        // Apply offline progress
+        final offlineService = OfflineProgressService(
+          maxOfflineHours: GameConfig.offlineProgressCapHours,
+          offlinePenalty: GameConfig.offlineProgressPenalty,
+        );
+
+        // Get multipliers for offline calculation
+        // We need to temporarily set state to savedState to use _getGeneratorMultipliers
+        // or just manually calculate them since state isn't set yet
+        final generatorMultipliers = <String, double>{};
+        if (_upgradeService != null) {
+          for (final generator in savedState.generators) {
+            final mult = _upgradeService!.getGeneratorMultiplier(generator.id);
+            if (mult > 1.0) {
+              generatorMultipliers[generator.id] = mult;
+            }
+          }
         }
+
+        final stateWithOffline = offlineService.applyOfflineProgress(
+          gameState: savedState,
+          lastUpdateTime: savedState.lastUpdateTime,
+          generatorMultipliers: generatorMultipliers,
+        );
+
+        state = stateWithOffline;
+        _stats = savedStats ?? GameStats();
+        _prestigeData = savedPrestige ?? PrestigeData();
 
         // Show offline reward if any
         final progress = offlineService.calculateOfflineProgress(
           gameState: savedState,
           lastUpdateTime: savedState.lastUpdateTime,
+          generatorMultipliers: generatorMultipliers,
         );
 
         final offlineTime = progress['offlineTime'] as Duration;
@@ -167,7 +184,11 @@ class ComprehensiveGameController extends Notifier<GameState> {
     // Update global multiplier from upgrades
     _updateMultipliers();
 
-    final earned = state.updateEnergy();
+    // Get generator multipliers
+    final generatorMultipliers = _getGeneratorMultipliers();
+
+    final earned =
+        state.updateEnergy(generatorMultipliers: generatorMultipliers);
 
     // IMPORTANT: Must reassign state to trigger Riverpod update
     if (earned > Decimal.zero) {
@@ -204,7 +225,14 @@ class ComprehensiveGameController extends Notifier<GameState> {
       return state.getEnergyPerSecond();
     }
 
-    // Build generator multipliers map
+    final generatorMultipliers = _getGeneratorMultipliers();
+    return state.getEnergyPerSecond(generatorMultipliers: generatorMultipliers);
+  }
+
+  /// Helper to get generator multipliers map
+  Map<String, double> _getGeneratorMultipliers() {
+    if (_upgradeService == null) return {};
+
     final generatorMultipliers = <String, double>{};
     for (final generator in state.generators) {
       final mult = _upgradeService!.getGeneratorMultiplier(generator.id);
@@ -212,8 +240,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
         generatorMultipliers[generator.id] = mult;
       }
     }
-
-    return state.getEnergyPerSecond(generatorMultipliers: generatorMultipliers);
+    return generatorMultipliers;
   }
 
   /// Check achievements
@@ -303,7 +330,9 @@ class ComprehensiveGameController extends Notifier<GameState> {
 
     // Apply click power multiplier from upgrades
     final clickMultiplier = _upgradeService?.getClickPowerMultiplier() ?? 1.0;
-    final finalAmount = baseAmount * Decimal.fromInt(clickMultiplier.toInt());
+    final clickMultiplierDecimal = Decimal.parse(clickMultiplier.toString());
+    final finalAmount =
+        NumberFormatter.toDecimal(baseAmount * clickMultiplierDecimal);
 
     state.addEnergy(finalAmount);
     state = state.copyWith();

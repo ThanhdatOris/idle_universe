@@ -65,13 +65,17 @@ class GameState {
 
   /// Cập nhật năng lượng dựa trên thời gian đã trôi qua
   /// Trả về số năng lượng đã kiếm được
-  Decimal updateEnergy({DateTime? currentTime}) {
+  Decimal updateEnergy({
+    DateTime? currentTime,
+    Map<String, double>? generatorMultipliers,
+  }) {
     final now = currentTime ?? DateTime.now();
     final elapsedSeconds = now.difference(lastUpdateTime).inSeconds;
 
     if (elapsedSeconds <= 0) return Decimal.zero;
 
-    final energyPerSec = getEnergyPerSecond();
+    final energyPerSec =
+        getEnergyPerSecond(generatorMultipliers: generatorMultipliers);
     final earned = NumberFormatter.toDecimal(
         energyPerSec * Decimal.fromInt(elapsedSeconds));
 
