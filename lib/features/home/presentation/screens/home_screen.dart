@@ -25,9 +25,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   BuyQuantity _buyQuantity = BuyQuantity.one;
 
   @override
+  void initState() {
+    super.initState();
+    // Setup achievement callback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller = ref.read(comprehensiveGameControllerProvider.notifier);
+      controller.setAchievementCallback(_showAchievementNotification);
+    });
+  }
+
+  @override
   void dispose() {
     _holdTimer?.cancel();
     super.dispose();
+  }
+
+  void _showAchievementNotification(Achievement achievement) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                achievement.icon,
+                style: const TextStyle(fontSize: 20),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Achievement Unlocked!',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(achievement.name),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.amber[800],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'VIEW',
+          textColor: Colors.white,
+          onPressed: () => _navigateToAchievements(context),
+        ),
+      ),
+    );
   }
 
   void _startHoldBuying(String generatorId) {

@@ -173,14 +173,15 @@
   **Impact:** Upgrades now correctly affect gameplay (production & clicking)
 
 #### Option B: Create Upgrades & Achievements UI Screens
+**Status:** ✅ Completed
 
-**Why:** Players can't see or interact with achievements/upgrades yet
-
-- Create Achievements screen to view progress
-- Create Upgrades screen to purchase upgrades
-- Add navigation to these screens
-- Show achievement unlock notifications
-  **Impact:** Makes systems visible and usable
+**Changes:**
+- ✅ Created `AchievementsScreen` with progress tracking
+- ✅ Created `UpgradesScreen` with purchase functionality
+- ✅ Added navigation from HomeScreen
+- ✅ Implemented achievement unlock notifications
+- ✅ Fixed predicted impact calculation in UpgradesScreen
+  **Impact:** Players can now view/buy upgrades and track achievements
 
 #### Option C: Complete Prestige Screen Integration
 
@@ -240,13 +241,13 @@
 
 ## 💡 MY RECOMMENDATION
 
-I recommend **Option B: Create Upgrades & Achievements UI Screens** as the next commit because:
+I recommend **Option C: Complete Prestige Screen Integration** as the next commit because:
 
-1.  **Visibility** - Players can now earn upgrades/achievements but can't see them
-2.  **Interaction** - Need UI to purchase the upgrades we just enabled
-3.  **Feedback Loop** - Completes the reward cycle for the player
+1.  **Core Loop** - Prestige is the main progression mechanic
+2.  **Placeholder** - Current prestige screen is just a dialog
+3.  **Data Ready** - Logic is implemented, just need UI to show it
 
-After that, **Option C: Prestige** will complete the core game loop.
+After that, **Option E: Offline Reward Dialog** would be good to improve retention.
 
 ---
 
@@ -275,7 +276,7 @@ After that, **Option C: Prestige** will complete the core game loop.
 ### What Needs Work:
 
 - ✅ Upgrade multipliers applied to production and clicks
-- ⚠️ No UI for achievements/upgrades
+- ✅ UI for achievements/upgrades implemented
 - ⚠️ Prestige screen is placeholder
 - ⚠️ Stats screen shows fake data
 - ⚠️ No offline reward notification

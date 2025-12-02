@@ -355,8 +355,7 @@ class UpgradesScreen extends ConsumerWidget {
               upgradeService.getGeneratorMultiplier(generator.id);
           final globalMult = gameState.globalMultiplier;
 
-          final genTotal = generator.productionPerSecond *
-              Decimal.fromInt(generator.owned) *
+          final genTotal = generator.getTotalProduction() *
               Decimal.parse(globalMult.toString()) *
               Decimal.parse(currentGenMult.toString());
 
