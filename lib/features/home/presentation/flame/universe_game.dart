@@ -4,9 +4,16 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
+import 'core_star_component.dart';
+
 /// UniverseGame - Flame game instance for background visuals
 class UniverseGame extends FlameGame {
   final Random _random = Random();
+
+  final VoidCallback? onCoreTap;
+  late CoreStarComponent _coreStar;
+
+  UniverseGame({this.onCoreTap});
 
   @override
   Color backgroundColor() => const Color(0xFF050510); // Deep cosmic blue/black
@@ -23,6 +30,17 @@ class UniverseGame extends FlameGame {
         size: _random.nextDouble() * 2 + 1,
       ));
     }
+
+    // Add Core Star (Interactive Tap Area)
+    _coreStar = CoreStarComponent(
+      position: Vector2(size.x / 2, size.y / 2),
+      size: 120, // Size of the star
+      onTap: () {
+        onCoreTap?.call();
+        spawnClickEffect(_coreStar.position);
+      },
+    );
+    add(_coreStar);
   }
 
   /// Spawn a particle explosion at position

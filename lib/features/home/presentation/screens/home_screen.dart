@@ -32,7 +32,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _game = UniverseGame();
+    _game = UniverseGame(onCoreTap: _onEnergyTap);
 
     // Setup achievement callback
     WidgetsBinding.instance.addPostFrameCallback((_) {

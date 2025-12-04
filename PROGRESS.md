@@ -236,27 +236,54 @@
 - Save notification preferences
 - Save theme preferences
 #### Option H: Integrate Flame Engine for Visuals
+**Status:** 🚧 In Progress
 
 **Why:** Enhance game feel with particles, animations, and interactive backgrounds
 
-- Add `flame` dependency
-- Create `UniverseBackground` with parallax stars
-- Implement particle effects for clicks and purchases
-- Replace static "Tap Area" with interactive Flame widget
+- ✅ Add `flame` dependency
+- ✅ Create `UniverseGame` with parallax stars
+- ✅ Implement particle effects for clicks
+- ⏳ Replace static "Tap Area" with interactive Flame widget
+- ⏳ Add generator visuals (planets/stars)
   **Impact:** Significantly improves visual quality and "juiciness"
+
+### 🛠️ FLAME UI REFACTOR PLAN
+**Goal:** Replace static Flutter widgets with dynamic Flame components where appropriate.
+
+#### 1. Interactive Tap Area (High Priority)
+- **Current:** Static Container with gradient and text.
+- **Flame:** `BigBangComponent` or `CoreStarComponent`.
+- **Behavior:** Pulses on idle, squashes on tap, emits shockwaves.
+
+#### 2. Generator Visualization (Medium Priority)
+- **Current:** List of cards with static icons.
+- **Flame:** `OrbitSystemComponent`.
+- **Behavior:** Each purchased generator adds a planet/star to the orbit around the core.
+  - Tier 1 (Photon): Small particles.
+  - Tier 3 (Solar): Burning suns.
+  - Tier 6 (Big Bang): Chaotic singularities.
+
+#### 3. Resource Collection (Low Priority)
+- **Current:** Numbers just increase.
+- **Flame:** `ResourceParticle`.
+- **Behavior:** Resources fly from generators to the resource bar.
+
+#### 4. Prestige Animation (High Priority)
+- **Current:** Simple dialog.
+- **Flame:** `UniverseCollapseEffect`.
+- **Behavior:** Screen shakes, everything gets sucked into the center, white flash, then Big Bang (reset).
 
 ---
 
 ## 💡 MY RECOMMENDATION
 
-I recommend **Option C: Complete Prestige Screen Integration** as the next commit because:
+I recommend starting the **Flame UI Refactor** with **Item 1: Interactive Tap Area** because:
 
-1.  **Core Loop** - Prestige is the main progression mechanic
-2.  **Placeholder** - Current prestige screen is just a dialog
-3.  **Data Ready** - Logic is implemented, just need UI to show it
+1.  **Central Interaction** - It's the most clicked element in the game.
+2.  **Visual Impact** - Replacing a static box with a living star will immediately wow the player.
+3.  **Feasibility** - We already have the Flame engine integrated in the background.
 
-After that, **Option E: Offline Reward Dialog** would be good to improve retention.
-Longer term, **Option H: Flame Engine Integration** will be crucial for polishing the game's visuals.
+After that, we can move to **Option C: Prestige** or continue with **Generator Visualization**.
 
 ---
 
