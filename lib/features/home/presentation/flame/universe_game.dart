@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 
 import 'core_star_component.dart';
 import 'orbit_system_component.dart';
+import 'prestige_effect.dart';
+import 'resource_particle.dart';
 
 /// UniverseGame - Flame game instance for background visuals
 class UniverseGame extends FlameGame {
@@ -14,6 +16,10 @@ class UniverseGame extends FlameGame {
   final VoidCallback? onCoreTap;
   late CoreStarComponent _coreStar;
   late OrbitSystemComponent _orbitSystem;
+
+  // Container for game elements that will be imploded
+  late PositionComponent _gameWorld;
+
   Map<String, int>? _pendingGeneratorCounts;
   bool _isLoaded = false;
 
@@ -24,9 +30,18 @@ class UniverseGame extends FlameGame {
 
   @override
   Future<void> onLoad() async {
-    // Add stars
+    final center = Vector2(size.x / 2, size.y / 2);
+
+    // Create a world container for easier manipulation (like prestige implode)
+    _gameWorld = PositionComponent(
+      position: Vector2.zero(),
+      size: size,
+    );
+    add(_gameWorld);
+
+    // Add stars to world
     for (int i = 0; i < 100; i++) {
-      add(StarComponent(
+      _gameWorld.add(StarComponent(
         position: Vector2(
           _random.nextDouble() * size.x,
           _random.nextDouble() * size.y,
@@ -35,13 +50,11 @@ class UniverseGame extends FlameGame {
       ));
     }
 
-    final center = Vector2(size.x / 2, size.y / 2);
-
-    // Add Orbit System (Planets)
+    // Add Orbit System (Planets) to world
     _orbitSystem = OrbitSystemComponent(position: center);
-    add(_orbitSystem);
+    _gameWorld.add(_orbitSystem);
 
-    // Add Core Star (Interactive Tap Area)
+    // Add Core Star (Interactive Tap Area) to world
     _coreStar = CoreStarComponent(
       position: center,
       size: 120, // Size of the star
@@ -50,7 +63,7 @@ class UniverseGame extends FlameGame {
         spawnClickEffect(_coreStar.position);
       },
     );
-    add(_coreStar);
+    _gameWorld.add(_coreStar);
 
     _isLoaded = true;
 
@@ -70,10 +83,60 @@ class UniverseGame extends FlameGame {
     }
   }
 
-  /// Spawn a particle explosion at position
+  /// Trigger Prestige Animation
+  void triggerPrestige(VoidCallback onComplete) {
+    if (!_isLoaded) {
+      onComplete();
+      return;
+    }
+
+    add(PrestigeEffect(
+      targetToImplode: _gameWorld,
+      onComplete: () {
+        // Reset world state visually
+        _gameWorld.scale = Vector2.all(1.0);
+        _gameWorld.angle = 0;
+
+        // Callback to reset game logic
+        onComplete();
+      },
+    ));
+  }
+
+  /// Spawn resource collection effect
+  void spawnResourceCollection() {
+    if (!_isLoaded) return;
+
+    if (_orbitSystem.children.isEmpty) return;
+
+    // Spawn 1-3 particles per tick if there are generators
+    final count = 1 + _random.nextInt(3);
+
+    for (int i = 0; i < count; i++) {
+      // Pick a random angle and radius to simulate a planet position
+      final angle = _random.nextDouble() * 2 * pi;
+      final radius = 100.0 + _random.nextDouble() * 150.0;
+
+      final startPos = Vector2(
+        size.x / 2 + cos(angle) * radius,
+        size.y / 2 + sin(angle) * radius,
+      );
+
+      // Target is top center (Resource Bar)
+      final targetPos = Vector2(size.x / 2, 40.0);
+
+      // Add to game root, not world, so it's not affected by world transforms if any
+      add(ResourceParticle(
+        startPosition: startPos,
+        targetPosition: targetPos,
+      ));
+    }
+  }
+
   void spawnClickEffect(Vector2 position) {
     for (int i = 0; i < 8; i++) {
-      add(EnergyParticle(position: position));
+      // Add to world so it moves with it
+      _gameWorld.add(EnergyParticle(position: position));
     }
   }
 }

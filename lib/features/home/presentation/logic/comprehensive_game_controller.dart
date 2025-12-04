@@ -24,6 +24,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
   PrestigeData? _prestigeData;
   AchievementService? _achievementService;
   UpgradeService? _upgradeService;
+  AudioService? _audioService;
 
   // Callback for achievement notifications
   void Function(Achievement)? _onAchievementUnlocked;
@@ -44,6 +45,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
       _gameLoop?.cancel();
       _autoClickTimer?.cancel();
       _saveManager?.dispose();
+      _audioService?.stopBgm();
     });
     return _createInitialState();
   }
@@ -51,6 +53,11 @@ class ComprehensiveGameController extends Notifier<GameState> {
   /// Initialize game - load save data or create new game
   Future<void> _initializeGame() async {
     try {
+      // Initialize audio service
+      _audioService = AudioService();
+      await _audioService!.initialize();
+      _audioService!.playBgm('gameLoopTrack.mp3');
+
       // Initialize save manager
       _saveManager = await SaveManager.initialize(
         autoSaveInterval: Duration(seconds: GameConfig.autoSaveIntervalSeconds),
@@ -66,6 +73,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
       _achievementService = AchievementService(
         onAchievementUnlocked: (achievement) {
           LoggerService.success('🏆 ${achievement.name} unlocked!');
+          _audioService?.playSfx('achievement.wav');
           // Call UI callback if set
           _onAchievementUnlocked?.call(achievement);
         },
@@ -274,6 +282,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
       state = state.copyWith();
       _stats?.incrementGeneratorsPurchased(count: purchased);
       LoggerService.info('Purchased $purchased x $generatorId');
+      _audioService?.playSfx('buy.wav');
     }
 
     return purchased;
@@ -294,6 +303,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
     if (success) {
       state = state.copyWith();
       _stats?.incrementUpgradesPurchased();
+      _audioService?.playSfx('upgrade.wav');
 
       // Update auto-click timer if auto-clicker upgrade purchased
       final upgrade = _upgradeService!.getUpgrade(upgradeId);
@@ -337,6 +347,11 @@ class ComprehensiveGameController extends Notifier<GameState> {
     state.addEnergy(finalAmount);
     state = state.copyWith();
     _stats?.incrementClicks();
+
+    // Only play sound for manual clicks (not auto-clicker)
+    if (amount == null) {
+      _audioService?.playSfx('click.wav');
+    }
   }
 
   // ========== PRESTIGE ==========
@@ -367,6 +382,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
     state.reset();
     state = state.copyWith();
     _stats?.incrementPrestiges();
+    _audioService?.playSfx('prestige.wav');
 
     LoggerService.success(
         'Prestige completed! Points: ${_prestigeData?.prestigePoints}');
@@ -410,6 +426,7 @@ class ComprehensiveGameController extends Notifier<GameState> {
   PrestigeData? get prestigeData => _prestigeData;
   AchievementService? get achievementService => _achievementService;
   UpgradeService? get upgradeService => _upgradeService;
+  AudioService? get audioService => _audioService;
   Decimal get energy => state.energy;
   Decimal get energyPerSecond => _getEnergyPerSecondWithMultipliers();
   List<Generator> get generators => state.generators;

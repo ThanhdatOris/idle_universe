@@ -22,7 +22,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   Timer? _holdTimer;
+  Timer? _particleTimer; // Timer for visual effects
   bool _menuExpanded = false;
+  bool _uiVisible = true; // Toggle for hiding UI
   int _tapAnimationKey = 0;
   BuyQuantity _buyQuantity = BuyQuantity.one;
 
@@ -46,13 +48,109 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         counts[gen.id] = gen.owned;
       }
       _game.updateGenerators(counts);
+
+      // Check for offline rewards
+      _checkOfflineRewards(controller);
+    });
+
+    // Start particle effect timer
+    _particleTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      if (mounted) {
+        final gameState = ref.read(comprehensiveGameControllerProvider);
+        if (gameState.getEnergyPerSecond() > Decimal.zero) {
+          _game.spawnResourceCollection();
+        }
+      }
     });
   }
 
   @override
   void dispose() {
     _holdTimer?.cancel();
+    _particleTimer?.cancel();
     super.dispose();
+  }
+
+  void _checkOfflineRewards(ComprehensiveGameController controller) {
+    final rewardData = controller.offlineRewardData;
+    if (rewardData != null) {
+      final earned = rewardData['earned'] as Decimal;
+      final time = rewardData['offlineTime'] as Duration;
+
+      // Format duration
+      String timeString = '';
+      if (time.inHours > 0) {
+        timeString = '${time.inHours}h ${time.inMinutes % 60}m';
+      } else if (time.inMinutes > 0) {
+        timeString = '${time.inMinutes}m ${time.inSeconds % 60}s';
+      } else {
+        timeString = '${time.inSeconds}s';
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Row(
+            children: [
+              Icon(Icons.bedtime, color: Colors.blueAccent),
+              SizedBox(width: 8),
+              Text('Welcome Back!', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'You were away for $timeString.',
+                style: const TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Your generators produced:',
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.bolt, color: Colors.amber),
+                    const SizedBox(width: 8),
+                    Text(
+                      '+${NumberFormatter.format(earned)} Energy',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                controller.markOfflineRewardShown();
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+              ),
+              child: const Text('Collect'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _showAchievementNotification(Achievement achievement) {
@@ -182,105 +280,130 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // Flame Game Background
           Positioned.fill(
-            child: GameWidget(
-              game: _game,
+            child: GestureDetector(
+              onTap: () {
+                if (!_uiVisible) {
+                  setState(() => _uiVisible = true);
+                }
+              },
+              child: GameWidget(
+                game: _game,
+              ),
             ),
           ),
 
           // Main UI Overlay
-          SafeArea(
-            child: Column(
-              children: [
-                // Resources Bar at top
-                ResourcesBar(
-                  energy: gameState.energy,
-                  energyPerSecond: gameState.getEnergyPerSecond(),
-                  clickPower:
-                      controller.upgradeService?.getClickPowerMultiplier(),
-                ),
+          AnimatedOpacity(
+            opacity: _uiVisible ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+            child: IgnorePointer(
+              ignoring: !_uiVisible,
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // Resources Bar at top
+                    ResourcesBar(
+                      energy: gameState.energy,
+                      energyPerSecond: gameState.getEnergyPerSecond(),
+                      clickPower:
+                          controller.upgradeService?.getClickPowerMultiplier(),
+                    ),
 
-                // Buy Quantity Selector
-                _buildBuyQuantitySelector(),
-
-                // Main content
-                Expanded(
-                  child: CustomScrollView(
-                    slivers: [
-                      // Energy Display Section
-                      SliverToBoxAdapter(
-                        child: _buildEnergyDisplay(context, gameState),
-                      ),
-
-                      // Generators Section Header
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.factory, color: Colors.blue),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Generators',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue.shade300,
-                                    ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                'Hold to buy continuously',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: Colors.grey[500],
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                              ),
-                            ],
-                          ),
+                    // Visibility Toggle (Small icon top right)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton(
+                          icon: const Icon(Icons.visibility_off,
+                              color: Colors.white54),
+                          onPressed: () => setState(() => _uiVisible = false),
+                          tooltip: 'Hide UI',
                         ),
                       ),
+                    ),
 
-                      // Generators List
-                      SliverPadding(
-                        padding: const EdgeInsets.all(16),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final generator = gameState.generators[index];
+                    // Buy Quantity Selector
+                    _buildBuyQuantitySelector(),
 
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _buildGeneratorCard(
-                                  context,
-                                  generator,
-                                  index,
-                                  gameState,
-                                ),
-                              );
-                            },
-                            childCount: gameState.generators.length,
+                    // Main content
+                    Expanded(
+                      child: CustomScrollView(
+                        slivers: [
+                          // Energy Display Section
+                          SliverToBoxAdapter(
+                            child: _buildEnergyDisplay(context, gameState),
                           ),
-                        ),
-                      ),
 
-                      // Bottom padding
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: 80),
+                          // Generators Section Header
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.factory, color: Colors.blue),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Generators',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue.shade300,
+                                        ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    'Hold to buy continuously',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: Colors.grey[500],
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Generators List
+                          SliverPadding(
+                            padding: const EdgeInsets.all(16),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final generator = gameState.generators[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _buildGeneratorCard(
+                                        context, generator, index, gameState),
+                                  );
+                                },
+                                childCount: gameState.generators.length,
+                              ),
+                            ),
+                          ),
+
+                          // Bottom padding
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: 80),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
       ),
-      floatingActionButton: _buildFloatingActions(context, controller),
+      floatingActionButton:
+          _uiVisible ? _buildFloatingActions(context, controller) : null,
     );
   }
 
@@ -484,58 +607,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(width: 8),
           Text(
             'Buy:',
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey[400]),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: BuyQuantity.values.map((quantity) {
-                  final isSelected = _buyQuantity == quantity;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _buyQuantity = quantity;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? Colors.blue.withValues(alpha: 0.3)
-                              : Colors.grey.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? Colors.blue
-                                : Colors.grey.withValues(alpha: 0.5),
-                            width: isSelected ? 2 : 1,
-                          ),
-                        ),
-                        child: Text(
-                          quantity.label,
-                          style: TextStyle(
-                            color: isSelected ? Colors.blue : Colors.grey[400],
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            fontSize: 13,
-                          ),
-                        ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: BuyQuantity.values.map((quantity) {
+                final isSelected = _buyQuantity == quantity;
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      _buyQuantity = quantity;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.blue.withValues(alpha: 0.2)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected
+                            ? Colors.blue
+                            : Colors.grey.withValues(alpha: 0.3),
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
+                    child: Text(
+                      quantity.label,
+                      style: TextStyle(
+                        color: isSelected ? Colors.blue : Colors.grey,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ],
@@ -543,159 +656,121 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Build floating action buttons with expandable menu
-  Widget _buildFloatingActions(BuildContext context, controller) {
+  /// Build floating action buttons (Menu)
+  Widget _buildFloatingActions(
+      BuildContext context, ComprehensiveGameController controller) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Menu items (shown when expanded)
         if (_menuExpanded) ...[
           _buildMenuButton(
-            context,
             icon: Icons.emoji_events,
             label: 'Achievements',
-            color: Colors.amber,
-            onTap: () => _navigateToAchievements(context),
+            onPressed: () => _navigateToAchievements(context),
           ),
           const SizedBox(height: 12),
           _buildMenuButton(
-            context,
             icon: Icons.upgrade,
             label: 'Upgrades',
-            color: Colors.purple,
-            onTap: () => _navigateToUpgrades(context),
+            onPressed: () => _navigateToUpgrades(context),
           ),
           const SizedBox(height: 12),
           _buildMenuButton(
-            context,
             icon: Icons.save,
-            label: 'Save',
-            color: Colors.green,
-            onTap: () => _saveGame(context, controller),
+            label: 'Save Game',
+            onPressed: () => _saveGame(context, controller),
           ),
           const SizedBox(height: 12),
-          if (controller.canPrestige())
-            _buildMenuButton(
-              context,
-              icon: Icons.auto_awesome,
-              label: 'Prestige',
-              color: Colors.purple,
-              onTap: () => _showPrestigeDialog(context, controller),
-            ),
-          if (controller.canPrestige()) const SizedBox(height: 12),
+          _buildMenuButton(
+            icon: Icons.restart_alt,
+            label: 'Prestige',
+            color: Colors.purpleAccent,
+            onPressed: () => _showPrestigeDialog(context, controller),
+          ),
+          const SizedBox(height: 12),
         ],
-
-        // Main menu button
         FloatingActionButton(
-          heroTag: 'menu',
           onPressed: () {
             setState(() {
               _menuExpanded = !_menuExpanded;
             });
           },
           backgroundColor: _menuExpanded ? Colors.red : Colors.blue,
-          child: AnimatedRotation(
-            turns: _menuExpanded ? 0.125 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: Icon(_menuExpanded ? Icons.close : Icons.menu),
-          ),
+          child: Icon(_menuExpanded ? Icons.close : Icons.menu),
         ),
       ],
     );
   }
 
-  /// Build individual menu button
-  Widget _buildMenuButton(
-    BuildContext context, {
+  Widget _buildMenuButton({
     required IconData icon,
     required String label,
-    required Color color,
-    required VoidCallback onTap,
+    required VoidCallback onPressed,
+    Color color = Colors.blue,
   }) {
-    return AnimatedScale(
-      scale: _menuExpanded ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(4),
           ),
-          const SizedBox(width: 8),
-          FloatingActionButton(
-            heroTag: label,
-            mini: true,
-            onPressed: onTap,
-            backgroundColor: color,
-            child: Icon(icon),
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.white),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 8),
+        FloatingActionButton.small(
+          heroTag: label,
+          onPressed: onPressed,
+          backgroundColor: color,
+          child: Icon(icon),
+        ),
+      ],
     );
   }
 
-  /// Navigate to Achievements screen
   void _navigateToAchievements(BuildContext context) {
-    setState(() => _menuExpanded = false);
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AchievementsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const AchievementsScreen()),
     );
   }
 
-  /// Navigate to Upgrades screen
   void _navigateToUpgrades(BuildContext context) {
-    setState(() => _menuExpanded = false);
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const UpgradesScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const UpgradesScreen()),
     );
   }
 
-  /// Save game
-  Future<void> _saveGame(BuildContext context, controller) async {
-    setState(() => _menuExpanded = false);
-    final success = await controller.saveGame();
+  Future<void> _saveGame(
+      BuildContext context, ComprehensiveGameController controller) async {
+    await controller.saveGame();
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success ? 'Game saved!' : 'Failed to save'),
-          backgroundColor: success ? Colors.green : Colors.red,
-          duration: const Duration(seconds: 2),
-        ),
+        const SnackBar(content: Text('Game Saved!')),
       );
     }
   }
 
-  /// Show prestige confirmation dialog
-  void _showPrestigeDialog(BuildContext context, controller) {
+  void _showPrestigeDialog(
+      BuildContext context, ComprehensiveGameController controller) {
     final gain = controller.calculatePrestigeGain();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
         title: const Row(
           children: [
             Icon(Icons.auto_awesome, color: Colors.purple),
             SizedBox(width: 8),
-            Text('Prestige'),
+            Text('Prestige', style: TextStyle(color: Colors.white)),
           ],
         ),
         content: Column(
@@ -704,7 +779,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             const Text(
               'Reset your progress to gain Prestige Points?\n',
-              style: TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: 16, color: Colors.white70),
             ),
             Container(
               padding: const EdgeInsets.all(12),
@@ -717,7 +792,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const Icon(Icons.star, color: Colors.amber),
                   const SizedBox(width: 8),
                   Text(
-                    '+${gain.toStringAsFixed(2)} Prestige Points',
+                    '+${NumberFormatter.format(gain)} Prestige Points',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -740,19 +815,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white70)),
           ),
           ElevatedButton(
             onPressed: () {
-              controller.performPrestige();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Prestige completed! 🎉'),
-                  backgroundColor: Colors.purple,
-                  duration: Duration(seconds: 3),
-                ),
-              );
+              Navigator.pop(context); // Close dialog first
+
+              // Trigger animation then prestige
+              _game.triggerPrestige(() {
+                controller.performPrestige();
+
+                // Refresh visuals after reset
+                final gameState = ref.read(comprehensiveGameControllerProvider);
+                final counts = <String, int>{};
+                for (final gen in gameState.generators) {
+                  counts[gen.id] = gen.owned;
+                }
+                _game.updateGenerators(counts);
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'Prestige completed! The universe has been reborn! 🌌'),
+                      backgroundColor: Colors.purple,
+                      duration: Duration(seconds: 4),
+                    ),
+                  );
+                }
+              });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.purple,
@@ -764,17 +856,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Get color for generator based on index
   Color _getGeneratorColor(int index) {
     final colors = [
-      Colors.amber,
-      Colors.orange,
-      Colors.purple,
-      Colors.blue,
-      Colors.cyan,
-      Colors.green,
-      Colors.pink,
-      Colors.teal,
+      Colors.cyanAccent,
+      Colors.greenAccent,
+      Colors.yellowAccent,
+      Colors.orangeAccent,
+      Colors.purpleAccent,
+      Colors.redAccent,
     ];
     return colors[index % colors.length];
   }
