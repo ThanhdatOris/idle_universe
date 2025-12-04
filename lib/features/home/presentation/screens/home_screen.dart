@@ -38,6 +38,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = ref.read(comprehensiveGameControllerProvider.notifier);
       controller.setAchievementCallback(_showAchievementNotification);
+
+      // Initialize generator visuals
+      final gameState = ref.read(comprehensiveGameControllerProvider);
+      final counts = <String, int>{};
+      for (final gen in gameState.generators) {
+        counts[gen.id] = gen.owned;
+      }
+      _game.updateGenerators(counts);
     });
   }
 
@@ -137,6 +145,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // Trigger Flame effect (center of screen for now)
         // In a real app we'd get the tap position
         _game.spawnClickEffect(Vector2(_game.size.x / 2, _game.size.y / 2));
+
+        // Update generator visuals
+        final counts = <String, int>{};
+        for (final gen in gameState.generators) {
+          counts[gen.id] = gen.owned;
+        }
+        _game.updateGenerators(counts);
       }
     }
   }

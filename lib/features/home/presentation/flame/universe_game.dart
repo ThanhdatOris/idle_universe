@@ -5,6 +5,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import 'core_star_component.dart';
+import 'orbit_system_component.dart';
 
 /// UniverseGame - Flame game instance for background visuals
 class UniverseGame extends FlameGame {
@@ -12,6 +13,9 @@ class UniverseGame extends FlameGame {
 
   final VoidCallback? onCoreTap;
   late CoreStarComponent _coreStar;
+  late OrbitSystemComponent _orbitSystem;
+  Map<String, int>? _pendingGeneratorCounts;
+  bool _isLoaded = false;
 
   UniverseGame({this.onCoreTap});
 
@@ -31,9 +35,15 @@ class UniverseGame extends FlameGame {
       ));
     }
 
+    final center = Vector2(size.x / 2, size.y / 2);
+
+    // Add Orbit System (Planets)
+    _orbitSystem = OrbitSystemComponent(position: center);
+    add(_orbitSystem);
+
     // Add Core Star (Interactive Tap Area)
     _coreStar = CoreStarComponent(
-      position: Vector2(size.x / 2, size.y / 2),
+      position: center,
       size: 120, // Size of the star
       onTap: () {
         onCoreTap?.call();
@@ -41,6 +51,23 @@ class UniverseGame extends FlameGame {
       },
     );
     add(_coreStar);
+
+    _isLoaded = true;
+
+    // Apply pending updates
+    if (_pendingGeneratorCounts != null) {
+      _orbitSystem.updateGenerators(_pendingGeneratorCounts!);
+      _pendingGeneratorCounts = null;
+    }
+  }
+
+  /// Update generator visuals
+  void updateGenerators(Map<String, int> generatorCounts) {
+    if (_isLoaded) {
+      _orbitSystem.updateGenerators(generatorCounts);
+    } else {
+      _pendingGeneratorCounts = generatorCounts;
+    }
   }
 
   /// Spawn a particle explosion at position
