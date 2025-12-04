@@ -1,5 +1,4 @@
 import 'package:flame/components.dart';
-import 'package:flutter/material.dart';
 
 /// ResourceParticle - Visual representation of collected resources
 ///
@@ -7,10 +6,9 @@ import 'package:flutter/material.dart';
 /// - Spawns at a generator (planet) position
 /// - Flies towards the resource bar (top of screen)
 /// - Fades out as it reaches the destination
-class ResourceParticle extends PositionComponent {
+class ResourceParticle extends SpriteComponent {
   final Vector2 targetPosition;
   final double speed;
-  final Color color;
 
   // Movement state
   late Vector2 _velocity;
@@ -20,12 +18,14 @@ class ResourceParticle extends PositionComponent {
   ResourceParticle({
     required Vector2 startPosition,
     required this.targetPosition,
-    this.color = Colors.amber,
+    required Sprite sprite,
     this.speed = 400.0,
   }) : super(
-            position: startPosition,
-            size: Vector2.all(6),
-            anchor: Anchor.center);
+          position: startPosition,
+          size: Vector2.all(12), // Slightly larger for pixel art visibility
+          anchor: Anchor.center,
+          sprite: sprite,
+        );
 
   @override
   Future<void> onLoad() async {
@@ -36,6 +36,7 @@ class ResourceParticle extends PositionComponent {
 
   @override
   void update(double dt) {
+    super.update(dt);
     _lifeTime += dt;
 
     // Move towards target
@@ -45,26 +46,5 @@ class ResourceParticle extends PositionComponent {
     if (position.y <= targetPosition.y || _lifeTime >= _maxLifeTime) {
       removeFromParent();
     }
-  }
-
-  @override
-  void render(Canvas canvas) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    // Draw a small glowing orb
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, paint);
-
-    // Trail effect (simple)
-    final trailPaint = Paint()
-      ..color = color.withValues(alpha: 0.5)
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
-
-    final trailEnd = Offset(
-        size.x / 2 - _velocity.x * 0.02, size.y / 2 - _velocity.y * 0.02);
-
-    canvas.drawLine(Offset(size.x / 2, size.y / 2), trailEnd, trailPaint);
   }
 }

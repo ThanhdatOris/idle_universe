@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 /// - Pulses gently when idle
 /// - Squashes and stretches on tap
 /// - Emits particles on tap
-class CoreStarComponent extends PositionComponent with TapCallbacks {
+class CoreStarComponent extends SpriteComponent with TapCallbacks {
   final VoidCallback onTap;
 
   // Animation state
@@ -26,19 +26,23 @@ class CoreStarComponent extends PositionComponent with TapCallbacks {
   CoreStarComponent({
     required Vector2 position,
     required double size,
+    required Sprite sprite,
     required this.onTap,
   }) : super(
-            position: position, size: Vector2.all(size), anchor: Anchor.center);
+          position: position,
+          size: Vector2.all(size),
+          anchor: Anchor.center,
+          sprite: sprite,
+        );
 
   @override
   void render(Canvas canvas) {
+    // Draw glow behind the sun
     final radius = size.x / 2;
-
-    // Outer glow
     final glowPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          Colors.amber.withValues(alpha: 0.6),
+          Colors.amber.withValues(alpha: 0.4),
           Colors.orange.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromCircle(
@@ -46,22 +50,13 @@ class CoreStarComponent extends PositionComponent with TapCallbacks {
 
     canvas.drawCircle(Offset(radius, radius), radius * 1.5, glowPaint);
 
-    // Core star
-    final paint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.white,
-          Colors.amber,
-          Colors.orange.shade900,
-        ],
-        stops: const [0.0, 0.3, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.x, size.y));
-
-    canvas.drawCircle(Offset(radius, radius), radius, paint);
+    // Draw the sprite (sun)
+    super.render(canvas);
   }
 
   @override
   void update(double dt) {
+    super.update(dt);
     _time += dt * _pulseSpeed;
 
     // Idle pulse animation

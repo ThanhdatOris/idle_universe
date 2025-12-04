@@ -1,13 +1,17 @@
 import 'dart:math';
+import 'dart:ui' as ui; // Import ui for Image type
 
 import 'package:flame/components.dart';
-import 'package:flutter/material.dart';
 
 /// OrbitSystemComponent - Manages planets orbiting the core star
 class OrbitSystemComponent extends PositionComponent {
   final List<PlanetComponent> _planets = [];
+  final ui.Image planetSpriteSheet;
 
-  OrbitSystemComponent({required Vector2 position}) : super(position: position);
+  OrbitSystemComponent({
+    required Vector2 position,
+    required this.planetSpriteSheet,
+  }) : super(position: position);
 
   /// Update the visual representation based on owned generators
   void updateGenerators(Map<String, int> generatorCounts) {
@@ -17,16 +21,28 @@ class OrbitSystemComponent extends PositionComponent {
     }
     _planets.clear();
 
+    // Calculate sprite dimensions (assuming 6 planets in a row)
+    final double spriteWidth = planetSpriteSheet.width / 6;
+    final double spriteHeight = planetSpriteSheet.height.toDouble();
+
     // Add planets based on counts
     // We limit the number of visual planets to avoid clutter
     int orbitIndex = 1;
+    int generatorIndex = 0; // To track which sprite to use
 
     generatorCounts.forEach((id, count) {
       if (count > 0) {
-        // Determine planet type/color based on ID
-        final color = _getPlanetColor(id);
+        // Create sprite for this generator type
+        // Clamp index to 5 (last planet) just in case
+        final spriteIndex = min(generatorIndex, 5);
+        final sprite = Sprite(
+          planetSpriteSheet,
+          srcPosition: Vector2(spriteIndex * spriteWidth, 0),
+          srcSize: Vector2(spriteWidth, spriteHeight),
+        );
+
         final radius =
-            5.0 + (orbitIndex * 0.5); // Planets get slightly larger further out
+            8.0 + (orbitIndex * 1.0); // Planets get slightly larger further out
         final orbitRadius = 80.0 + (orbitIndex * 25.0);
         final speed = 1.0 / orbitIndex; // Outer planets move slower
 
@@ -39,7 +55,7 @@ class OrbitSystemComponent extends PositionComponent {
           final planet = PlanetComponent(
             orbitRadius: orbitRadius,
             radius: radius,
-            color: color,
+            sprite: sprite,
             speed: speed,
             startAngle: startAngle,
           );
@@ -50,66 +66,32 @@ class OrbitSystemComponent extends PositionComponent {
 
         orbitIndex++;
       }
+      generatorIndex++;
     });
-  }
-
-  Color _getPlanetColor(String id) {
-    // Map generator IDs to colors
-    // This should ideally come from the Generator model or config
-    switch (id) {
-      case 'gen_001':
-        return Colors.cyanAccent; // Photon
-      case 'gen_002':
-        return Colors.greenAccent; // Electron
-      case 'gen_003':
-        return Colors.yellowAccent; // Solar
-      case 'gen_004':
-        return Colors.orangeAccent; // Fusion
-      case 'gen_005':
-        return Colors.purpleAccent; // Neutron
-      case 'gen_006':
-        return Colors.redAccent; // Big Bang
-      default:
-        return Colors.white;
-    }
   }
 }
 
-class PlanetComponent extends PositionComponent {
+class PlanetComponent extends SpriteComponent {
   final double orbitRadius;
-  final double radius;
-  final Color color;
   final double speed;
   double _angle;
 
   PlanetComponent({
     required this.orbitRadius,
-    required this.radius,
-    required this.color,
+    required double radius,
+    required Sprite sprite,
     required this.speed,
     required double startAngle,
   })  : _angle = startAngle,
-        super(anchor: Anchor.center);
-
-  @override
-  void render(Canvas canvas) {
-    // Draw orbit trail (faint)
-    // Note: Drawing full orbit circles for every planet might be expensive
-    // We can optimize this by drawing orbits in the parent component
-
-    // Draw planet
-    final paint = Paint()..color = color;
-    canvas.drawCircle(Offset.zero, radius, paint);
-
-    // Draw simple glow
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0);
-    canvas.drawCircle(Offset.zero, radius + 2, glowPaint);
-  }
+        super(
+          anchor: Anchor.center,
+          size: Vector2.all(radius * 2), // Size is diameter
+          sprite: sprite,
+        );
 
   @override
   void update(double dt) {
+    super.update(dt);
     _angle += speed * dt;
 
     // Update position based on orbit

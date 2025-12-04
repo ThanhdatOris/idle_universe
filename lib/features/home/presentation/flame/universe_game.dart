@@ -28,8 +28,34 @@ class UniverseGame extends FlameGame {
   @override
   Color backgroundColor() => const Color(0xFF050510); // Deep cosmic blue/black
 
+  late Sprite _particleSprite;
+  late Sprite _starSprite;
+
   @override
   Future<void> onLoad() async {
+    // Load 8-bit assets
+    await images.loadAll([
+      'sun_8bit.png',
+      'planets_8bit.png',
+      'particles_8bit.png',
+    ]);
+
+    // Create sprites from sheet
+    final particleSheet = images.fromCache('particles_8bit.png');
+    final spriteSize = particleSheet.width / 3;
+
+    _starSprite = Sprite(
+      particleSheet,
+      srcPosition: Vector2(0, 0),
+      srcSize: Vector2(spriteSize, particleSheet.height.toDouble()),
+    );
+
+    _particleSprite = Sprite(
+      particleSheet,
+      srcPosition: Vector2(spriteSize * 2, 0), // 3rd item
+      srcSize: Vector2(spriteSize, particleSheet.height.toDouble()),
+    );
+
     final center = Vector2(size.x / 2, size.y / 2);
 
     // Create a world container for easier manipulation (like prestige implode)
@@ -47,17 +73,22 @@ class UniverseGame extends FlameGame {
           _random.nextDouble() * size.y,
         ),
         size: _random.nextDouble() * 2 + 1,
+        sprite: _starSprite,
       ));
     }
 
     // Add Orbit System (Planets) to world
-    _orbitSystem = OrbitSystemComponent(position: center);
+    _orbitSystem = OrbitSystemComponent(
+      position: center,
+      planetSpriteSheet: images.fromCache('planets_8bit.png'),
+    );
     _gameWorld.add(_orbitSystem);
 
     // Add Core Star (Interactive Tap Area) to world
     _coreStar = CoreStarComponent(
       position: center,
       size: 120, // Size of the star
+      sprite: Sprite(images.fromCache('sun_8bit.png')),
       onTap: () {
         onCoreTap?.call();
         spawnClickEffect(_coreStar.position);
@@ -129,6 +160,7 @@ class UniverseGame extends FlameGame {
       add(ResourceParticle(
         startPosition: startPos,
         targetPosition: targetPos,
+        sprite: _particleSprite,
       ));
     }
   }
@@ -136,29 +168,35 @@ class UniverseGame extends FlameGame {
   void spawnClickEffect(Vector2 position) {
     for (int i = 0; i < 8; i++) {
       // Add to world so it moves with it
-      _gameWorld.add(EnergyParticle(position: position));
+      _gameWorld.add(EnergyParticle(
+        position: position,
+        sprite: _particleSprite,
+      ));
     }
   }
 }
 
 /// StarComponent - Simple twinkling star
-class StarComponent extends PositionComponent {
+class StarComponent extends SpriteComponent {
   late double _twinkleSpeed;
   late double _baseAlpha;
   double _time = 0;
 
-  StarComponent({required Vector2 position, required double size})
-      : super(position: position, size: Vector2.all(size)) {
+  StarComponent({
+    required Vector2 position,
+    required double size,
+    required Sprite sprite,
+  }) : super(
+          position: position,
+          size: Vector2.all(size),
+          sprite: sprite,
+          anchor: Anchor.center,
+        ) {
     _twinkleSpeed = 0.5 + Random().nextDouble() * 2.0;
     _baseAlpha = 0.3 + Random().nextDouble() * 0.5;
-  }
 
-  @override
-  void render(Canvas canvas) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: _baseAlpha)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, paint);
+    // Set initial alpha
+    setColor(Colors.white.withValues(alpha: _baseAlpha));
   }
 
   @override
@@ -167,22 +205,30 @@ class StarComponent extends PositionComponent {
     // Simple sine wave twinkle
     final alphaChange = sin(_time) * 0.2;
     final newAlpha = (_baseAlpha + alphaChange).clamp(0.1, 1.0);
-    _baseAlpha = newAlpha;
+
+    setColor(Colors.white.withValues(alpha: newAlpha));
   }
 }
 
 /// EnergyParticle - Particle emitted on click
-class EnergyParticle extends PositionComponent {
+class EnergyParticle extends SpriteComponent {
   final Vector2 velocity;
   double lifeTime = 1.0;
   final double maxLifeTime = 1.0;
 
-  EnergyParticle({required Vector2 position})
-      : velocity = Vector2(
+  EnergyParticle({
+    required Vector2 position,
+    required Sprite sprite,
+  })  : velocity = Vector2(
           (Random().nextDouble() - 0.5) * 200,
           (Random().nextDouble() - 0.5) * 200,
         ),
-        super(position: position, size: Vector2.all(4));
+        super(
+          position: position,
+          size: Vector2.all(8),
+          sprite: sprite,
+          anchor: Anchor.center,
+        );
 
   @override
   void update(double dt) {
@@ -191,14 +237,9 @@ class EnergyParticle extends PositionComponent {
     if (lifeTime <= 0) {
       removeFromParent();
     }
-  }
 
-  @override
-  void render(Canvas canvas) {
+    // Fade out
     final alpha = (lifeTime / maxLifeTime).clamp(0.0, 1.0);
-    final paint = Paint()
-      ..color = Colors.amber.withValues(alpha: alpha)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, paint);
+    setColor(Colors.white.withValues(alpha: alpha));
   }
 }
