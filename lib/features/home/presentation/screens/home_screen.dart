@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:decimal/decimal.dart';
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:idle_universe/core/models/models.dart';
 import 'package:idle_universe/core/utils/utils.dart';
 import 'package:idle_universe/core/widgets/widgets.dart';
 import 'package:idle_universe/features/achievements/presentation/screens/achievements_screen.dart';
+import 'package:idle_universe/features/home/presentation/flame/universe_game.dart';
 import 'package:idle_universe/features/home/presentation/logic/comprehensive_game_controller.dart';
 import 'package:idle_universe/features/upgrades/presentation/screens/upgrades_screen.dart';
 
@@ -24,9 +26,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _tapAnimationKey = 0;
   BuyQuantity _buyQuantity = BuyQuantity.one;
 
+  // Game instance reference
+  late final UniverseGame _game;
+
   @override
   void initState() {
     super.initState();
+    _game = UniverseGame();
+
     // Setup achievement callback
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = ref.read(comprehensiveGameControllerProvider.notifier);
@@ -126,6 +133,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (purchased > 0) {
         // Trigger animation
         setState(() => _tapAnimationKey++);
+
+        // Trigger Flame effect (center of screen for now)
+        // In a real app we'd get the tap position
+        _game.spawnClickEffect(Vector2(_game.size.x / 2, _game.size.y / 2));
       }
     }
   }
@@ -134,6 +145,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final controller = ref.read(comprehensiveGameControllerProvider.notifier);
     controller.clickEnergy();
     setState(() => _tapAnimationKey++);
+
+    // Trigger Flame effect
+    // Random position around center
+    final center = Vector2(_game.size.x / 2, _game.size.y / 2);
+    final offset = Vector2(
+      (DateTime.now().millisecond % 100 - 50).toDouble(),
+      (DateTime.now().microsecond % 100 - 50).toDouble(),
+    );
+    _game.spawnClickEffect(center + offset);
   }
 
   @override
@@ -141,100 +161,111 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final gameState = ref.watch(comprehensiveGameControllerProvider);
     final controller = ref.read(comprehensiveGameControllerProvider.notifier);
 
-    return CosmicBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: const CustomAppBar(
-          title: 'Idle Universe',
-          subtitle: '🌌 Build Your Universe',
-        ),
-        body: Column(
-          children: [
-            // Resources Bar at top
-            ResourcesBar(
-              energy: gameState.energy,
-              energyPerSecond: gameState.getEnergyPerSecond(),
-              clickPower: controller.upgradeService?.getClickPowerMultiplier(),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Flame Game Background
+          Positioned.fill(
+            child: GameWidget(
+              game: _game,
             ),
+          ),
 
-            // Buy Quantity Selector
-            _buildBuyQuantitySelector(),
+          // Main UI Overlay
+          SafeArea(
+            child: Column(
+              children: [
+                // Resources Bar at top
+                ResourcesBar(
+                  energy: gameState.energy,
+                  energyPerSecond: gameState.getEnergyPerSecond(),
+                  clickPower:
+                      controller.upgradeService?.getClickPowerMultiplier(),
+                ),
 
-            // Main content
-            Expanded(
-              child: CustomScrollView(
-                slivers: [
-                  // Energy Display Section
-                  SliverToBoxAdapter(
-                    child: _buildEnergyDisplay(context, gameState),
-                  ),
+                // Buy Quantity Selector
+                _buildBuyQuantitySelector(),
 
-                  // Generators Section Header
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.factory, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Generators',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade300,
-                                ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            'Hold to buy continuously',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                // Main content
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      // Energy Display Section
+                      SliverToBoxAdapter(
+                        child: _buildEnergyDisplay(context, gameState),
+                      ),
+
+                      // Generators Section Header
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.factory, color: Colors.blue),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Generators',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue.shade300,
+                                    ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                'Hold to buy continuously',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
                                       color: Colors.grey[500],
                                       fontStyle: FontStyle.italic,
                                     ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
 
-                  // Generators List
-                  SliverPadding(
-                    padding: const EdgeInsets.all(16),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final generator = gameState.generators[index];
+                      // Generators List
+                      SliverPadding(
+                        padding: const EdgeInsets.all(16),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final generator = gameState.generators[index];
 
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _buildGeneratorCard(
-                              context,
-                              generator,
-                              index,
-                              gameState,
-                            ),
-                          );
-                        },
-                        childCount: gameState.generators.length,
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _buildGeneratorCard(
+                                  context,
+                                  generator,
+                                  index,
+                                  gameState,
+                                ),
+                              );
+                            },
+                            childCount: gameState.generators.length,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
 
-                  // Bottom padding
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 80),
+                      // Bottom padding
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: 80),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-        floatingActionButton: _buildFloatingActions(context, controller),
+          ),
+        ],
       ),
+      floatingActionButton: _buildFloatingActions(context, controller),
     );
   }
 
